@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.15...3.27)
 
 # Set up the project and ensure there is a working C++ compiler
-project(my_ext LANGUAGES CXX)
+project(pyRecFusionSDK_proj LANGUAGES CXX)
 
 # Warn if the user invokes CMake directly
 if (NOT SKBUILD)
@@ -39,7 +39,7 @@ find_package(nanobind CONFIG REQUIRED)
 # We are now ready to compile the actual extension module
 nanobind_add_module(
   # Name of the extension
-  _my_ext_impl
+  _pyRecFusionSDK_impl
 
   # Target the stable ABI for Python 3.12+, which reduces
   # the number of binary wheels that must be built. This
@@ -51,4 +51,4 @@ nanobind_add_module(
 )
 
 # Install directive for scikit-build-core
-install(TARGETS _my_ext_impl LIBRARY DESTINATION my_ext)
+install(TARGETS _pyRecFusionSDK_impl LIBRARY DESTINATION my_ext)
