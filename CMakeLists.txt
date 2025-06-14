@@ -47,7 +47,7 @@ nanobind_add_module(
   STABLE_ABI
 
   # Source code goes here
-  src/my_ext.cpp
+  src/pyRecFusionSDK.cpp
 )
 
 # Install directive for scikit-build-core
