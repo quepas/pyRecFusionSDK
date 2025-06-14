@@ -51,4 +51,4 @@ nanobind_add_module(
 )
 
 # Install directive for scikit-build-core
-install(TARGETS _pyRecFusionSDK_impl LIBRARY DESTINATION my_ext)
+install(TARGETS _pyRecFusionSDK_impl LIBRARY DESTINATION pyRecFusionSDK)

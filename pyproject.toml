@@ -1,5 +1,5 @@
 [project]
-name = "my_ext"
+name = "pyRecFusionSDK"
 version = "0.0.1"
 description = "A brief description of what this project does"
 readme = "README.md"
