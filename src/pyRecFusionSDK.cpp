@@ -1,8 +1,11 @@
+#include <RecFusion.h>
 #include <nanobind/nanobind.h>
 
-int add(int a, int b) { return a + b; }
+namespace nb = nanobind;
+using namespace RecFusion;
 
 NB_MODULE(_pyRecFusionSDK_impl, m) {
-  m.def("hello", []() { return "Hello world!"; });
-  m.def("add", &add);
+  m.def("major_version", &RecFusionSDK::majorVersion);
+  m.def("minor_version", &RecFusionSDK::minorVersion);
+  m.def("build_version", &RecFusionSDK::buildVersion);
 }

@@ -5,8 +5,10 @@ cmake_minimum_required(VERSION 3.15...3.27)
 project(pyRecFusionSDK_proj LANGUAGES CXX)
 
 # Warn if the user invokes CMake directly
-if (NOT SKBUILD)
-  message(WARNING "\
+if(NOT SKBUILD)
+    message(
+        WARNING
+        "\
   This CMake file is meant to be executed using 'scikit-build-core'.
   Running it directly will almost certainly not produce the desired
   result. If you are a user trying to install this package, use the
@@ -25,13 +27,18 @@ if (NOT SKBUILD)
   =====================================================================
   You may optionally add -Ceditable.rebuild=true to auto-rebuild when
   the package is imported. Otherwise, you need to rerun the above
-  after editing C++ files.")
+  after editing C++ files."
+    )
 endif()
 
 # Try to import all Python components potentially needed by nanobind
-find_package(Python 3.8
-  REQUIRED COMPONENTS Interpreter Development.Module
-  OPTIONAL_COMPONENTS Development.SABIModule)
+find_package(
+    Python
+    3.8
+    REQUIRED
+    COMPONENTS Interpreter Development.Module
+    OPTIONAL_COMPONENTS Development.SABIModule
+)
 
 # Import nanobind through CMake's find_package mechanism
 find_package(nanobind CONFIG REQUIRED)
@@ -49,6 +56,15 @@ nanobind_add_module(
   # Source code goes here
   src/pyRecFusionSDK.cpp
 )
+target_include_directories(
+    _pyRecFusionSDK_impl
+    PRIVATE ./third-party/RecFusionSDK/include
+)
+target_link_directories(
+    _pyRecFusionSDK_impl
+    PRIVATE ./third-party/RecFusionSDK/lib
+)
+target_link_libraries(_pyRecFusionSDK_impl PRIVATE RecFusionSDK)
 
 # Install directive for scikit-build-core
 install(TARGETS _pyRecFusionSDK_impl LIBRARY DESTINATION pyRecFusionSDK)

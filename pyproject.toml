@@ -10,6 +10,9 @@ authors = [
 classifiers = [
     "License :: MIT",
 ]
+dependencies = [
+    "pytest>=8.3.5",
+]
 # Optional: runtime dependency specification
 # dependencies = [ "cryptography >=41.0" ]
 
