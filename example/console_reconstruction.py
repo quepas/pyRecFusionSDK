@@ -2,7 +2,10 @@
 import sys
 import pyRecFusionSDK as rf
 
-if not rf.activate("XXXXX-XXXXX-XXXXX-XXXXX-XXXXX"):
+# print(rf.token())
+# sys.exit(0)
+
+if not rf.activate("XXXXX-XXXXX-XXXXX-XXXXX"):
     print("Invalid RecFusion license. Export will be disabled")
 
 rf.init()
@@ -18,18 +21,18 @@ if not sensor.open():
     rf.deinit()
     sys.exit("Couldn't open sensor")
 
-cw = sensor.color_width()
-ch = sensor.color_height()
-dw = sensor.depth_width()
-dh = sensor.depth_height()
+cw = sensor.color_width
+ch = sensor.color_height
+dw = sensor.depth_width
+dh = sensor.depth_height
 
 params = rf.ReconstructionParams()
 
 
 params.set_image_size(cw, ch, dw, dh)
-params.set_intrinsics(sensor.depth_intrinsics())
-params.set_color_intrinsics(sensor.color_intrinsics())
-params.set_depth_to_color_transformation(sensor.depth_to_color_transformation())
+params.set_intrinsics(sensor.depth_intrinsics)
+params.set_color_intrinsics(sensor.color_intrinsics)
+params.set_depth_to_color_transformation(sensor.depth_to_color_transformation)
 
 reconstruction = rf.Reconstruction(params)
 img_color = rf.ColorImage.empty(cw, ch)
