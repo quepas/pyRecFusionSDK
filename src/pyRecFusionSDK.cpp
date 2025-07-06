@@ -1,7 +1,10 @@
+#include <PngIO.h>
 #include <RecFusion.h>
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/tuple.h>
+#include <string>
 #include <tuple>
+#include <vector>
 
 using std::make_tuple;
 namespace nb = nanobind;
@@ -16,6 +19,7 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
   m.def("major_version", &RecFusionSDK::majorVersion);
   m.def("minor_version", &RecFusionSDK::minorVersion);
   m.def("build_version", &RecFusionSDK::buildVersion);
+  m.def("version", []() { return "version" });
 
   // RecFusion/Sensor.h
   // Sensor
@@ -39,7 +43,55 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
       .def("set_laser_state", &Sensor::setLaserState)
       .def_prop_ro("supports_auto_white_balance",
                    &Sensor::supportsAutoWhiteBalance)
-      .def_prop_ro("supports_auto_exposure", &Sensor::supportsAutoExposure);
+      .def_prop_ro("supports_auto_exposure", &Sensor::supportsAutoExposure)
+      .def("read_image", &Sensor::readImage, "img_depth"_a, "img_color"_a,
+           "timeout"_a = 2000)
+      .def("depth_format_count", &Sensor::depthFormatCount)
+      .def("depth_format", &Sensor::depthFormat, "id"_a)
+      .def("color_format_count", &Sensor::colorFormatCount)
+      .def("color_format", &Sensor::colorFormat, "id"_a)
+      // New API
+      .def_prop_ro("image_size",
+                   [](Sensor &sensor) {
+                     return make_tuple(
+                         sensor.colorWidth(), sensor.colorHeight(),
+                         sensor.depthWidth(), sensor.depthHeight());
+                   })
+      .def("depth_formats",
+           [](Sensor &sensor) {
+             std::vector<Format> formats;
+             for (int i = 0; i < sensor.depthFormatCount(); ++i) {
+               formats.emplace_back(sensor.depthFormat(i));
+             }
+             return formats;
+           })
+      .def("color_formats",
+           [](Sensor &sensor) {
+             std::vector<Format> formats;
+             for (int i = 0; i < sensor.colorFormatCount(); ++i) {
+               formats.emplace_back(sensor.colorFormat(i));
+             }
+             return formats;
+           })
+      .def_prop_ro("device_name",
+                   [](Sensor &sensor) {
+                     char buffer[256];
+                     sensor.deviceName(buffer, len);
+                     // TODO: return string?
+                     return buffer;
+                   })
+      .def_prop_ro("uuid", [](Sensor &sensor) {
+        char buffer[256];
+        sensor.uuid(buffer, len);
+        // TODO: return string?
+        return buffer;
+      });
+
+  nb::class_<Sensor::Format>(m, "SensorFormat");
+  // .def_prop_rw("width", &Sensor::Format::width);
+  //   .def_prop_ro("height", &Sensor::Format::height)
+  //   .def_prop_ro("double", &Sensor::Format::fps);
+  //
 
   // .def(nb::init<>());
   // .def("device_name", &Sensor::deviceName, "name"_a, "len"_a);
@@ -47,8 +99,33 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
   // SensorManager
   nb::class_<SensorManager>(m, "SensorManager")
       .def(nb::init<>())
-      .def("device_count", &SensorManager::deviceCount)
-      .def("sensor", &SensorManager::sensor, "id"_a);
+      .def_prop_ro("device_count", &SensorManager::deviceCount)
+      .def("sensor", &SensorManager::sensor, "id"_a, nb::rv_policy::reference)
+      // New API
+      // TODO: pass the standard parameters from Sensor::open()
+      .def("open_all",
+           [](SensorManager &manager, int colorWidth = 640,
+              int colorHeight = 480, int depthWidth = 640,
+              int depthHeight = 480, double maxFps = 30) {
+             std::vector<Sensor *> sensors;
+             for (int i = 0; i < manager.deviceCount(); ++i) {
+               auto sensor = manager.sensor(i);
+               if (sensor.open(colorWidth, colorHeight, depthWidth, depthHeight,
+                               maxFps)) {
+                 sensors.emplace_back(sensor);
+               }
+             }
+             return sensors;
+           })
+      .def("open_any",
+           [](SensorManager &manager, int colorWidth = 640,
+              int colorHeight = 480, int depthWidth = 640,
+              int depthHeight = 480, double maxFps = 30) -> Sensor * {
+             if (manager.deviceCount() > 0) {
+               return manager.sensor(0);
+             }
+             return nullptr;
+           });
 
   // ReconstructionParams
   nb::class_<ReconstructionParams>(m, "ReconstructionParams")
@@ -69,21 +146,70 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
   // Reconstruction
   nb::class_<Reconstruction>(m, "Reconstruction")
       .def(nb::init<ReconstructionParams>())
-      .def_prop_ro("good", &Reconstruction::good);
+      .def_prop_ro("good", &Reconstruction::good)
+      .def(
+          "add_frame2",
+          [](Reconstruction &reconstruction, int sensor, DepthImage &imgDepth,
+             ColorImage &imgColor) {
+            return reconstruction.addFrame(sensor, imgDepth, imgColor);
+          },
+          "sensor"_a, "img_depth"_a, "img_color"_a)
+      .def("add_frame", &Reconstruction::addFrame, "sensor"_a, "img_depth"_a,
+           "img_color"_a, "tracking_status"_a = 0, "img_scene"_a = 0, "T"_a = 0,
+           "sensor_T"_a = 0, "tracked_t"_a = 0,
+           "dont_force_first_frame"_a = false)
+      .def("get_mesh", [](Reconstruction &reconstruction) {
+        auto mesh = new Mesh();
+        reconstruction.getMesh(mesh);
+        return mesh;
+      });
+
   // RecFusion/Common.h
   // ColorImage
   nb::class_<ColorImage>(m, "ColorImage")
-      .def(nb::init<int, int, int, unsigned char *>())
+      .def(nb::init<int, int, int, unsigned char *>(), "width"_a, "height"_a,
+           "channels"_a = 3, "data"_a = nb::none())
       .def_prop_ro("width", &ColorImage::width)
       .def_prop_ro("height", &ColorImage::height)
-      .def_prop_ro("channels", &ColorImage::channels);
+      .def_prop_ro("channels", &ColorImage::channels)
+      .def_static(
+          "empty",
+          [](int width, int height, int channels) {
+            return new ColorImage(width, height, channels);
+          },
+          "width"_a, "height"_a, "channels"_a = 3)
+      .def(
+          "to_image",
+          [](ColorImage &img_color, const char *filename, int compression = 3) {
+            // BUG: for some reason, ColorImage::channels() returns 0
+            auto num_channels =
+                img_color.channels() > 0 ? img_color.channels() : 3;
+            PngIO::writeImage(filename, img_color.data(), img_color.width(),
+                              img_color.height(), num_channels, 0, compression);
+          },
+          "filename"_a, "compression"_a = 3);
+
+  nb::class_<DepthImage>(m, "DepthImage")
+      .def(nb::init<int, int, float *>(), "width"_a, "height"_a, "data"_a = 0)
+      .def_prop_ro("width", &DepthImage::width)
+      .def_prop_ro("height", &DepthImage::height)
+      .def_static(
+          "empty",
+          [](int width, int height) { return new DepthImage(width, height); },
+          "width"_a, "height"_a)
+      .def(
+          "to_image",
+          [](DepthImage &img_depth, const char *filename, int compression = 3) {
+            PngIO::writeImage(filename, img_depth.data(), img_depth.width(),
+                              img_depth.height(), 1, compression);
+          },
+          "filename"_a, "compression"_a = 3);
+
   // Vec3
   // Mat3
-  nb::class_<Mat3>(m, "Mat3")
-      .def(nb::init<double*>());
+  nb::class_<Mat3>(m, "Mat3").def(nb::init<double *>());
   // Mat4
-  nb::class_<Mat4>(m, "Mat4")
-      .def(nb::init<double*>());
+  nb::class_<Mat4>(m, "Mat4").def(nb::init<double *>());
   // Mesh
   nb::class_<Mesh>(m, "Mesh")
       .def(nb::init<>())
@@ -93,8 +219,8 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
       // "triangle_count"_a,
       //             "triangle_indices"_a, "colors"_a = 0, "normals"_a = 0,
       //             "volume_resolution"_a = 512, &Mesh::create)
-      .def("vertex_count", &Mesh::vertexCount)
-      .def("triangle_count", &Mesh::triangleCount)
+      .def_prop_ro("vertex_count", &Mesh::vertexCount)
+      .def_prop_ro("triangle_count", &Mesh::triangleCount)
       .def(
           "vertex",
           [](Mesh &mesh, int idx) {
@@ -133,7 +259,11 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
           [](Mesh &mesh, int idx, double r, double g, double b) {
             mesh.setNormal(idx, {r, g, b});
           },
-          "idx"_a, "r"_a, "g"_a, "b"_a);
+          "idx"_a, "r"_a, "g"_a, "b"_a)
+      .def_prop_ro("center", [](Mesh &mesh) {
+        auto center = mesh.center();
+        return make_tuple(center[0], center[1], center[2]);
+      });
   // .def(
   //     "triangle",
   //     [](Mesh &mesh, int idx) {
@@ -142,4 +272,56 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
   //     },
   //     "idx"_a);
   // .def("add_triangle");
+  //
+  nb::class_<RFSRecorder>(m, "RFSRecorder")
+      .def(nb::init<const char *>())
+      .def("init", &RFSRecorder::init, "color_width"_a, "color_height"_a,
+           "depth_width"_a, "depth_height"_a, "depth_k"_a,
+           "color_k"_a = nb::none(), "depth_to_color_t"_a = nb::none())
+      .def("cleanup", &RFSRecorder::cleanup)
+      .def("start", &RFSRecorder::start)
+      .def("stop", &RFSRecorder::stop)
+      .def("add_frame", &RFSRecorder::addFrame, "img_depth"_a, "img_color"_a);
+
+  nb::class_<RFSPlayback>(m, "RFSPlayback")
+      .def(nb::init<>())
+      .def("open", &RFSPlayback::open, "filename"_a)
+      .def("close", &RFSPlayback::close)
+      .def_prop_ro("frame_count", &RFSPlayback::frameCount)
+      .def("read_image", &RFSPlayback::readImage, "frame"_a, "img_depth"_a,
+           "img_color"_a)
+      .def_prop_ro("color_width", &RFSPlayback::colorWidth)
+      .def_prop_ro("color_height", &RFSPlayback::colorHeight)
+      .def_prop_ro("depth_width", &RFSPlayback::depthWidth)
+      .def_prop_ro("depth_height", &RFSPlayback::depthHeight)
+      // TODO: depth_intrinsics ?
+      .def_prop_ro("intrinsics", &RFSPlayback::intrinsics)
+      .def_prop_ro("color_intrinsics", &RFSPlayback::colorIntrinsics)
+      // TODO: depth_to_color_transformation ?
+      .def_prop_ro("depth_to_color_t", &RFSPlayback::depthToColorT);
+
+  // Calibration
+  nb::class_<Calibration>(m, "Calibration")
+      .def(nb::init<>())
+      .def("init", &Calibration::init, "num_sensors"_a)
+      .def("set_marker", &Calibration::setMarker, "marked_id"_a,
+           "marker_size"_a, "marker_t"_a = nb::none())
+      .def("set_image", &Calibration::setImage, "sensor"_a, "img_depth"_a,
+           "img_color"_a, "depth_k"_a, "color_k"_a,
+           "depth_to_color_t"_a = nb::none())
+      .def("calibrate", &Calibration::calibrate)
+      .def(
+          "get_transformation",
+          [](Calibration &calibration, int sensor) {
+            Mat4 *T = new Mat4();
+            calibration.getTransformation(sensor, *T);
+            return T;
+          },
+          "sensor"_a)
+      .def_static("get_marker_pose", &Calibration::getMarkerPose, "marker_id"_a,
+                  "marker_size"_a, "img_color"_a, "color_k"_a, "t"_a);
+
+  nb::class_<MeshViewer>(m, "MeshViewer")
+      .def(nb::init<>())
+      .def("show_mesh", &MeshViewer::showMesh, "mesh"_a);
 }
