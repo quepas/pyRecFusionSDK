@@ -1,4 +1,9 @@
-# ConsoleReconstruction example with only the sensor reconstruction logic
+"""
+Example: perform mesh reconstruction directly from sensors.
+
+This example uses only one sensor.
+"""
+
 import sys
 from argparse import ArgumentParser
 
@@ -26,16 +31,11 @@ if not rf.activate(args.license_key):
 
 rf.init()
 sensor_manager = rf.SensorManager()
+sensor = sensor_manager.open_any()
 
-if sensor_manager.device_count == 0:
+if not sensor:
     rf.deinit()
-    sys.exit("No sensors are available")
-
-sensor = sensor_manager.sensor(0)
-
-if not sensor.open():
-    rf.deinit()
-    sys.exit("Couldn't open sensor")
+    sys.exit("ERROR: no sensor was opened!")
 
 cw, ch, dw, dh = sensor.image_size
 print(f"Image color size: {cw}x{ch}, depth size: {dw}x{dh}")
@@ -49,8 +49,8 @@ params.set_color_intrinsics(sensor.color_intrinsics)
 params.set_depth_to_color_transformation(sensor.depth_to_color_transformation)
 
 reconstruction = rf.Reconstruction(params)
-img_color = rf.ColorImage.empty(cw, ch)
-img_depth = rf.DepthImage.empty(dw, dh)
+img_color = rf.ColorImage.for_sensor(sensor)
+img_depth = rf.DepthImage.for_sensor(sensor)
 
 # int frame = 0
 max_frames = 100

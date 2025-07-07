@@ -2,6 +2,7 @@
 #include <RecFusion.h>
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
+#include <nanobind/trampoline.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <string>
@@ -15,6 +16,15 @@ using std::make_tuple, std::string, std::to_string;
 namespace nb = nanobind;
 using namespace RecFusion;
 using namespace nb::literals;
+
+struct PySensorListener : public SensorListener {
+  NB_TRAMPOLINE(SensorListener, 1);
+
+  void onSensorData(const ColorImage &colorImg,
+                    const DepthImage &depthImg) override {
+    NB_OVERRIDE(onSensorData, colorImg, depthImg);
+  }
+};
 
 NB_MODULE(_pyRecFusionSDK_impl, m) {
   // TODO: keep these functions in the sdk submodule!
@@ -55,6 +65,8 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
       .def_prop_ro("supports_auto_white_balance",
                    &Sensor::supportsAutoWhiteBalance)
       .def_prop_ro("supports_auto_exposure", &Sensor::supportsAutoExposure)
+      .def("add_listener", &Sensor::addListener, "listener"_a)
+      .def("remove_listener", &Sensor::removeListener, "listener"_a)
       .def("read_image", &Sensor::readImage, "img_depth"_a, "img_color"_a,
            "timeout"_a = 2000)
       .def("depth_format_count", &Sensor::depthFormatCount)
@@ -103,6 +115,11 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
           return string("sensor_manager_non_existing");
         return string(buffer, result);
       });
+
+  nb::class_<SensorListener, PySensorListener>(m, "SensorListener")
+      // TODO: this is a virtual method, figure this out!
+      .def(nb::init<>())
+      .def("on_sensor_data", &PySensorListener::onSensorData);
 
   nb::class_<Sensor::Format>(m, "SensorFormat")
       // .def(nb::init<>())
