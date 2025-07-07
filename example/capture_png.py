@@ -4,6 +4,8 @@ Example: save the first color and depth frames to PNG images.
 This example uses only one sensor.
 """
 
+import sys
+
 import pyRecFusionSDK as rf
 
 print(f"Using RecFusionSDK v{rf.version()}")
@@ -16,11 +18,8 @@ if not sensor:
     rf.deinit()
     sys.exit("ERROR: no sensor was opened!")
 
-cw, ch, dw, dh = sensor.image_size
-print(f"Image color size: {cw}x{ch}, depth size: {dw}x{dh}")
-
-img_color = rf.ColorImage.empty(cw, ch)
-img_depth = rf.DepthImage.empty(dw, dh)
+img_color = rf.ColorImage.for_sensor(sensor)
+img_depth = rf.DepthImage.for_sensor(sensor)
 
 if sensor.read_image(img_depth, img_color):
     img_color.to_image("color.png")

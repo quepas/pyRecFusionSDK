@@ -1,12 +1,28 @@
-# ConsoleReconstruction example with only the sensor reconstruction logic
+"""
+Example: sequence of frames into the playback file (*.rfs)
+
+This example uses only one sensor.
+Run with `--help` to see available options!
+"""
+
 import sys
 from argparse import ArgumentParser
 
 import pyRecFusionSDK as rf
 
 parser = ArgumentParser()
-parser.add_argument("output_file")
-parser.add_argument("--num-frames", type=int, default=100)
+parser.add_argument(
+    "--playback_file",
+    type=str,
+    default="playback.rfs",
+    help="Name of the output file (*.rfs)",
+)
+parser.add_argument(
+    "--num-frames",
+    type=int,
+    default=10,
+    help="Number of frames to capture into the playback file",
+)
 args = parser.parse_args()
 
 print(f"Using RecFusionSDK v{rf.version()}")
@@ -15,20 +31,15 @@ rf.init()
 sensor_manager = rf.SensorManager()
 sensor = sensor_manager.open_any()
 
-if sensor is None or not sensor.open():
+if not sensor:
     rf.deinit()
-    sys.exit("No sensors are available and cannot be opened.")
+    sys.exit("ERROR: no sensor was opened!")
 
-cw, ch, dw, dh = sensor.image_size
+img_color = rf.ColorImage.for_sensor(sensor)
+img_depth = rf.DepthImage.for_sensor(sensor)
 
-print(f"Image color size: {cw}x{ch}, depth size: {dw}x{dh}")
-
-img_color = rf.ColorImage.empty(cw, ch)
-img_depth = rf.DepthImage.empty(dw, dh)
-
-recorder = rf.RFSRecorder(args.output_file)
-# TODO: add init_from_sensor() ?
-recorder.init(cw, ch, dw, dh, sensor.depth_intrinsics)
+recorder = rf.RFSRecorder(args.playback_file)
+recorder.init_from_sensor(sensor)
 recorder.start()
 
 num_processed_frames = 0
@@ -47,5 +58,4 @@ print(
 recorder.stop()
 recorder.cleanup()
 sensor.close()
-
 rf.deinit()

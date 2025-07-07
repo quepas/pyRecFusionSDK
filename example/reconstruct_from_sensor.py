@@ -1,10 +1,21 @@
 # ConsoleReconstruction example with only the sensor reconstruction logic
-from argparse import ArgumentParser
 import sys
+from argparse import ArgumentParser
+
 import pyRecFusionSDK as rf
 
 parser = ArgumentParser()
-parser.add_argument("license_key", type=str)
+parser.add_argument(
+    "license_key",
+    type=str,
+    help="RecFusionSDK license key required to export the final mesh",
+)
+parser.add_argument(
+    "--output-mesh",
+    type=str,
+    default="mesh.ply",
+    help="Path to the reconstructed mesh (*.ply)",
+)
 args = parser.parse_args()
 
 

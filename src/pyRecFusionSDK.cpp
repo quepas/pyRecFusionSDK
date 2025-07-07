@@ -1,29 +1,40 @@
 #include <PngIO.h>
 #include <RecFusion.h>
 #include <nanobind/nanobind.h>
+#include <nanobind/stl/string.h>
 #include <nanobind/stl/tuple.h>
+#include <nanobind/stl/vector.h>
 #include <string>
 #include <tuple>
 #include <vector>
 
-using std::make_tuple;
+// TODO: delete this
+#include <iostream>
+
+using std::make_tuple, std::string, std::to_string;
 namespace nb = nanobind;
 using namespace RecFusion;
 using namespace nb::literals;
 
 NB_MODULE(_pyRecFusionSDK_impl, m) {
+  // TODO: keep these functions in the sdk submodule!
   m.def("init", &RecFusionSDK::init, "log_filename"_a = "");
   m.def("deinit", &RecFusionSDK::deinit);
   m.def("activate", &RecFusionSDK::activate, "key"_a, "code"_a = "");
+  m.def("valid_license", &RecFusionSDK::validLicense);
   m.def("token", &RecFusionSDK::token);
   m.def("major_version", &RecFusionSDK::majorVersion);
   m.def("minor_version", &RecFusionSDK::minorVersion);
   m.def("build_version", &RecFusionSDK::buildVersion);
-  m.def("version", []() { return "version" });
+  // New API
+  m.def("version", []() {
+    return to_string(RecFusionSDK::majorVersion()) + "." +
+           to_string(RecFusionSDK::minorVersion()) + "." +
+           to_string(RecFusionSDK::buildVersion());
+  });
 
   // RecFusion/Sensor.h
   // Sensor
-  // TODO: no default constructor!
   nb::class_<Sensor>(m, "Sensor")
       .def("open", &Sensor::open, "color_width"_a = 640, "color_height"_a = 480,
            "depth_width"_a = 640, "depth_height"_a = 480, "max_fps"_a = 30)
@@ -57,75 +68,89 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
                          sensor.colorWidth(), sensor.colorHeight(),
                          sensor.depthWidth(), sensor.depthHeight());
                    })
-      .def("depth_formats",
-           [](Sensor &sensor) {
-             std::vector<Format> formats;
-             for (int i = 0; i < sensor.depthFormatCount(); ++i) {
-               formats.emplace_back(sensor.depthFormat(i));
-             }
-             return formats;
-           })
-      .def("color_formats",
-           [](Sensor &sensor) {
-             std::vector<Format> formats;
-             for (int i = 0; i < sensor.colorFormatCount(); ++i) {
-               formats.emplace_back(sensor.colorFormat(i));
-             }
-             return formats;
-           })
+      .def_prop_ro("depth_formats",
+                   [](Sensor &sensor) {
+                     std::vector<Sensor::Format> formats;
+                     for (int i = 0; i < sensor.depthFormatCount(); ++i) {
+                       formats.emplace_back(sensor.depthFormat(i));
+                     }
+                     return formats;
+                   })
+      .def_prop_ro("color_formats",
+                   [](Sensor &sensor) {
+                     std::vector<Sensor::Format> formats;
+                     for (int i = 0; i < sensor.colorFormatCount(); ++i) {
+                       formats.emplace_back(sensor.colorFormat(i));
+                     }
+                     return formats;
+                   })
       .def_prop_ro("device_name",
                    [](Sensor &sensor) {
                      char buffer[256];
-                     sensor.deviceName(buffer, len);
-                     // TODO: return string?
-                     return buffer;
+                     auto result = sensor.deviceName(buffer, 256);
+                     if (result == -2)
+                       return string("buffer_too_small");
+                     if (result == -1)
+                       return string("sensor_manager_non_existing");
+                     return string(buffer, result);
                    })
       .def_prop_ro("uuid", [](Sensor &sensor) {
         char buffer[256];
-        sensor.uuid(buffer, len);
-        // TODO: return string?
-        return buffer;
+        auto result = sensor.uuid(buffer, 256);
+        if (result == -2)
+          return string("buffer_too_small");
+        if (result == -1)
+          return string("sensor_manager_non_existing");
+        return string(buffer, result);
       });
 
-  nb::class_<Sensor::Format>(m, "SensorFormat");
-  // .def_prop_rw("width", &Sensor::Format::width);
-  //   .def_prop_ro("height", &Sensor::Format::height)
-  //   .def_prop_ro("double", &Sensor::Format::fps);
-  //
+  nb::class_<Sensor::Format>(m, "SensorFormat")
+      // .def(nb::init<>())
+      .def_ro("width", &Sensor::Format::width)
+      .def_ro("height", &Sensor::Format::height)
+      .def_ro("fps", &Sensor::Format::fps)
+      // New API
+      .def("__repr__", [](Sensor::Format &format) {
+        return to_string(format.width) + "x" + to_string(format.height) + "@" +
+               to_string(format.fps) + "fps";
+      });
 
-  // .def(nb::init<>());
-  // .def("device_name", &Sensor::deviceName, "name"_a, "len"_a);
-  // .def("uuid",
-  // SensorManager
   nb::class_<SensorManager>(m, "SensorManager")
       .def(nb::init<>())
       .def_prop_ro("device_count", &SensorManager::deviceCount)
       .def("sensor", &SensorManager::sensor, "id"_a, nb::rv_policy::reference)
       // New API
-      // TODO: pass the standard parameters from Sensor::open()
-      .def("open_all",
-           [](SensorManager &manager, int colorWidth = 640,
-              int colorHeight = 480, int depthWidth = 640,
-              int depthHeight = 480, double maxFps = 30) {
-             std::vector<Sensor *> sensors;
-             for (int i = 0; i < manager.deviceCount(); ++i) {
-               auto sensor = manager.sensor(i);
-               if (sensor.open(colorWidth, colorHeight, depthWidth, depthHeight,
+      .def(
+          "open_all",
+          [](SensorManager &manager, int colorWidth, int colorHeight,
+             int depthWidth, int depthHeight, double maxFps) {
+            std::vector<Sensor *> sensors;
+            for (int i = 0; i < manager.deviceCount(); ++i) {
+              auto sensor = manager.sensor(i);
+              if (sensor->open(colorWidth, colorHeight, depthWidth, depthHeight,
                                maxFps)) {
-                 sensors.emplace_back(sensor);
-               }
-             }
-             return sensors;
-           })
-      .def("open_any",
-           [](SensorManager &manager, int colorWidth = 640,
-              int colorHeight = 480, int depthWidth = 640,
-              int depthHeight = 480, double maxFps = 30) -> Sensor * {
-             if (manager.deviceCount() > 0) {
-               return manager.sensor(0);
-             }
-             return nullptr;
-           });
+                sensors.emplace_back(sensor);
+              }
+            }
+            return sensors;
+          },
+          "color_width"_a = 640, "color_height"_a = 480, "depth_width"_a = 640,
+          "depth_height"_a = 480, "max_fps"_a = 30, nb::rv_policy::reference)
+      .def(
+          "open_any",
+          [](SensorManager &manager, int colorWidth, int colorHeight,
+             int depthWidth, int depthHeight, double maxFps) -> Sensor * {
+            if (manager.deviceCount() > 0) {
+              auto sensor = manager.sensor(0);
+              if (sensor->open(colorWidth, colorHeight, depthWidth, depthHeight,
+                               maxFps)) {
+                return sensor;
+              }
+            }
+            return nullptr;
+          },
+          "color_width"_a = 640, "color_height"_a = 480, "depth_width"_a = 640,
+          "depth_height"_a = 480, "max_fps"_a = 30, nb::rv_policy::reference);
 
   // ReconstructionParams
   nb::class_<ReconstructionParams>(m, "ReconstructionParams")
@@ -172,12 +197,19 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
       .def_prop_ro("width", &ColorImage::width)
       .def_prop_ro("height", &ColorImage::height)
       .def_prop_ro("channels", &ColorImage::channels)
+      // New API
       .def_static(
           "empty",
           [](int width, int height, int channels) {
             return new ColorImage(width, height, channels);
           },
           "width"_a, "height"_a, "channels"_a = 3)
+      .def_static(
+          "for_sensor",
+          [](const Sensor &sensor) {
+            return new ColorImage(sensor.colorWidth(), sensor.colorHeight());
+          },
+          "sensor"_a)
       .def(
           "to_image",
           [](ColorImage &img_color, const char *filename, int compression = 3) {
@@ -193,10 +225,17 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
       .def(nb::init<int, int, float *>(), "width"_a, "height"_a, "data"_a = 0)
       .def_prop_ro("width", &DepthImage::width)
       .def_prop_ro("height", &DepthImage::height)
+      // New API
       .def_static(
           "empty",
           [](int width, int height) { return new DepthImage(width, height); },
           "width"_a, "height"_a)
+      .def_static(
+          "for_sensor",
+          [](const Sensor &sensor) {
+            return new DepthImage(sensor.depthWidth(), sensor.depthHeight());
+          },
+          "sensor"_a)
       .def(
           "to_image",
           [](DepthImage &img_depth, const char *filename, int compression = 3) {
@@ -281,7 +320,13 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
       .def("cleanup", &RFSRecorder::cleanup)
       .def("start", &RFSRecorder::start)
       .def("stop", &RFSRecorder::stop)
-      .def("add_frame", &RFSRecorder::addFrame, "img_depth"_a, "img_color"_a);
+      .def("add_frame", &RFSRecorder::addFrame, "img_depth"_a, "img_color"_a)
+      // New API
+      .def("init_from_sensor", [](RFSRecorder &recorder, Sensor &sensor) {
+        recorder.init(sensor.colorWidth(), sensor.colorHeight(),
+                      sensor.depthWidth(), sensor.depthHeight(),
+                      sensor.depthIntrinsics());
+      });
 
   nb::class_<RFSPlayback>(m, "RFSPlayback")
       .def(nb::init<>())
