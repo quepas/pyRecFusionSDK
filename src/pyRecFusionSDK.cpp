@@ -2,9 +2,9 @@
 #include <RecFusion.h>
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
-#include <nanobind/trampoline.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
+#include <nanobind/trampoline.h>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -356,11 +356,13 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
       .def_prop_ro("color_height", &RFSPlayback::colorHeight)
       .def_prop_ro("depth_width", &RFSPlayback::depthWidth)
       .def_prop_ro("depth_height", &RFSPlayback::depthHeight)
-      // TODO: depth_intrinsics ?
       .def_prop_ro("intrinsics", &RFSPlayback::intrinsics)
       .def_prop_ro("color_intrinsics", &RFSPlayback::colorIntrinsics)
-      // TODO: depth_to_color_transformation ?
-      .def_prop_ro("depth_to_color_t", &RFSPlayback::depthToColorT);
+      .def_prop_ro("depth_to_color_t", &RFSPlayback::depthToColorT)
+      // New API
+      .def_prop_ro("depth_intrinsics", &RFSPlayback::intrinsics)
+      .def_prop_ro("depth_to_color_transformation",
+                   &RFSPlayback::depthToColorT);
 
   // Calibration
   nb::class_<Calibration>(m, "Calibration")
