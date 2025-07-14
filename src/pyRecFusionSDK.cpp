@@ -22,7 +22,7 @@ struct PySensorListener : public SensorListener {
 
   void onSensorData(const ColorImage &colorImg,
                     const DepthImage &depthImg) override {
-    NB_OVERRIDE(onSensorData, colorImg, depthImg);
+    NB_OVERRIDE_PURE(onSensorData, colorImg, depthImg);
   }
 };
 
@@ -117,9 +117,8 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
       });
 
   nb::class_<SensorListener, PySensorListener>(m, "SensorListener")
-      // TODO: this is a virtual method, figure this out!
       .def(nb::init<>())
-      .def("on_sensor_data", &PySensorListener::onSensorData);
+      .def("on_sensor_data", &SensorListener::onSensorData);
 
   nb::class_<Sensor::Format>(m, "SensorFormat")
       // .def(nb::init<>())
@@ -262,6 +261,17 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
           "filename"_a, "compression"_a = 3);
 
   // Vec3
+  nb::class_<Vec3>(m, "Vec3")
+      .def(nb::init<double, double, double>(), "x"_a, "y"_a, "z"_a)
+      .def_prop_ro("x", [](Vec3 &vec) { return vec[0]; })
+      .def_prop_ro("y", [](Vec3 &vec) { return vec[1]; })
+      .def_prop_ro("z", [](Vec3 &vec) { return vec[2]; });
+  // Vec3i
+  nb::class_<Vec3i>(m, "Vec3i")
+      .def(nb::init<int, int, int>(), "x"_a, "y"_a, "z"_a)
+      .def_prop_ro("x", [](Vec3 &vec) { return vec[0]; })
+      .def_prop_ro("y", [](Vec3 &vec) { return vec[1]; })
+      .def_prop_ro("z", [](Vec3 &vec) { return vec[2]; });
   // Mat3
   nb::class_<Mat3>(m, "Mat3").def(nb::init<double *>());
   // Mat4
