@@ -4,6 +4,9 @@ cmake_minimum_required(VERSION 3.15...3.27)
 # Set up the project and ensure there is a working C++ compiler
 project(pyRecFusionSDK_proj LANGUAGES CXX)
 
+# Input directory with additional CMake modules
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 # Warn if the user invokes CMake directly
 if(NOT SKBUILD)
     message(
@@ -42,6 +45,7 @@ find_package(
 
 # Import nanobind through CMake's find_package mechanism
 find_package(nanobind CONFIG REQUIRED)
+find_package(RecFusion MODULE REQUIRED)
 
 # We are now ready to compile the actual extension module
 nanobind_add_module(
@@ -56,15 +60,16 @@ nanobind_add_module(
   # Source code goes here
   src/pyRecFusionSDK.cpp
 )
-target_include_directories(
-    _pyRecFusionSDK_impl
-    PRIVATE ./third-party/RecFusionSDK/include
-)
-target_link_directories(
-    _pyRecFusionSDK_impl
-    PRIVATE ./third-party/RecFusionSDK/lib
-)
-target_link_libraries(_pyRecFusionSDK_impl PRIVATE RecFusionSDK)
+# target_include_directories(
+#     _pyRecFusionSDK_impl
+#     PRIVATE ./third-party/RecFusionSDK/include
+# )
+# target_link_directories(
+#     _pyRecFusionSDK_impl
+#     PRIVATE ./third-party/RecFusionSDK/lib
+# )
+# target_link_libraries(_pyRecFusionSDK_impl PRIVATE RecFusionSDK)
 
+target_link_libraries(_pyRecFusionSDK_impl PRIVATE RecFusion::RecFusion_CXX)
 # Install directive for scikit-build-core
 install(TARGETS _pyRecFusionSDK_impl LIBRARY DESTINATION pyRecFusionSDK)
