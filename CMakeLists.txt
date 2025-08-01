@@ -37,7 +37,7 @@ endif()
 # Try to import all Python components potentially needed by nanobind
 find_package(
     Python
-    3.9
+    3.8
     REQUIRED
     COMPONENTS Interpreter Development.Module
     OPTIONAL_COMPONENTS Development.SABIModule
@@ -60,15 +60,6 @@ nanobind_add_module(
   # Source code goes here
   src/pyRecFusionSDK.cpp
 )
-# target_include_directories(
-#     _pyRecFusionSDK_impl
-#     PRIVATE ./third-party/RecFusionSDK/include
-# )
-# target_link_directories(
-#     _pyRecFusionSDK_impl
-#     PRIVATE ./third-party/RecFusionSDK/lib
-# )
-# target_link_libraries(_pyRecFusionSDK_impl PRIVATE RecFusionSDK)
 
 target_link_libraries(_pyRecFusionSDK_impl PRIVATE RecFusion::RecFusion_CXX)
 # Install directive for scikit-build-core

@@ -1,26 +1,39 @@
 include(CheckCXXSourceCompiles)
 
 function(find_recfusionsdk)
-    set(RECFUSION_HINT_DIR
-        "${CMAKE_CURRENT_SOURCE_DIR}/third-party/RecFusionSDK/"
-    )
+    # Standard RecFusionSDK installation path
+    set(RF_WIN32_DIR "C:\\Program Files (x86)\\ImFusion\\RecFusionSDK")
+    # Development RecFusionSDK path
+    set(RF_DEV_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third-party/RecFusionSDK/")
 
     find_path(
         RECFUSION_INCLUDE_DIR
         NAMES RecFusion.h
-        HINTS ${RECFUSION_HINT_DIR}/include
+        HINTS ${RF_WIN32_DIR}/include ${RF_DEV_DIR}/include
     )
+
+    if(NOT RECFUSION_INCLUDE_DIR)
+        return()
+    endif()
 
     find_library(
         RECFUSION_LIBRARY
         NAMES RecFusionSDK
-        HINTS ${RECFUSION_HINT_DIR}/lib
+        HINTS ${RF_WIN32_DIR}/lib ${RF_DEV_DIR}/lib
     )
 
+    if(NOT RECFUSION_LIBRARY)
+        return()
+    endif()
+
+    # These variables are used by check_cxx_source_compiles()
+    # to compile the C++/RecFusionSDK snippet
     set(CMAKE_REQUIRED_FLAGS)
     set(CMAKE_REQUIRED_INCLUDES ${RECFUSION_INCLUDE_DIR})
     set(CMAKE_REQUIRED_LIBRARIES ${RECFUSION_LIBRARY})
 
+    # Compile a test program which imports the RecFusionSDK library
+    # and runs one instruction
     check_cxx_source_compiles(
         [=[
 #include <RecFusion.h>
@@ -28,7 +41,7 @@ function(find_recfusionsdk)
 using namespace RecFusion;
 
 int main() {
-  RecFusionSDK::majorVersion(); 
+  RecFusionSDK::majorVersion();
 }
 ]=]
         RECFUSION_links
@@ -36,11 +49,8 @@ int main() {
         cpp
     )
     if(NOT RECFUSION_links)
-        message(FATAL "Not compiled!")
         return()
     endif()
-    message(FATAL "Compiled!")
-    # add_library(RecFusion::RecFusion_CXX INTERFACE IMPORTED)
 
     set(RECFUSION_FOUND ${RECFUSION_links} PARENT_SCOPE)
     set(RECFUSION_INCLUDE_DIR ${CMAKE_REQUIRED_INCLUDES} PARENT_SCOPE)
@@ -49,6 +59,7 @@ endfunction()
 
 find_recfusionsdk()
 
+# Define the RecFusion target if the SDK was found!
 if(RECFUSION_FOUND)
     if(NOT TARGET RecFusion::RecFusion_CXX)
         add_library(RecFusion::RecFusion_CXX INTERFACE IMPORTED)
@@ -63,6 +74,11 @@ if(RECFUSION_FOUND)
     endif()
 endif()
 
+message(STATUS "Found RecFusionSDK: ${RECFUSION_FOUND}")
 if(RECFUSION_FOUND)
-    message(STATUS "Found!")
+    message(STATUS "Found RecFusionSDK library: ${RECFUSION_LIBRARY}")
+    message(
+        STATUS
+        "Found RecFusionSDK include directory: ${RECFUSION_INCLUDE_DIR}"
+    )
 endif()
