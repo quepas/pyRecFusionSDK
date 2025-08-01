@@ -1,10 +1,13 @@
 #include <PngIO.h>
 #include <RecFusion.h>
 #include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
+#include <nanobind/stl/optional.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <nanobind/trampoline.h>
+#include <optional>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -46,6 +49,30 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
   // RecFusion/Sensor.h
   // Sensor
   nb::class_<Sensor>(m, "Sensor")
+      .def_prop_ro("device_name",
+                   [](Sensor &sensor) {
+                     char buffer[256];
+                     auto result = sensor.deviceName(buffer, 256);
+                     if (result == -2)
+                       return string("buffer_too_small");
+                     if (result == -1)
+                       return string("sensor_manager_non_existing");
+                     return string(buffer, result);
+                   })
+      .def_prop_ro("uuid",
+                   [](Sensor &sensor) {
+                     char buffer[256];
+                     auto result = sensor.uuid(buffer, 256);
+                     if (result == -2)
+                       return string("buffer_too_small");
+                     if (result == -1)
+                       return string("sensor_manager_non_existing");
+                     return string(buffer, result);
+                   })
+      .def("depth_format_count", &Sensor::depthFormatCount)
+      .def("color_format_count", &Sensor::colorFormatCount)
+      .def("depth_format", &Sensor::depthFormat, "id"_a)
+      .def("color_format", &Sensor::colorFormat, "id"_a)
       .def("open", &Sensor::open, "color_width"_a = 640, "color_height"_a = 480,
            "depth_width"_a = 640, "depth_height"_a = 480, "max_fps"_a = 30)
       .def("close", &Sensor::close)
@@ -65,14 +92,15 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
       .def_prop_ro("supports_auto_white_balance",
                    &Sensor::supportsAutoWhiteBalance)
       .def_prop_ro("supports_auto_exposure", &Sensor::supportsAutoExposure)
-      .def("add_listener", &Sensor::addListener, "listener"_a)
+      .def(
+          "add_listener",
+          [](Sensor &sensor, SensorListener &listener) {
+            sensor.addListener(&listener);
+          },
+          "listener"_a)
       .def("remove_listener", &Sensor::removeListener, "listener"_a)
       .def("read_image", &Sensor::readImage, "img_depth"_a, "img_color"_a,
            "timeout"_a = 2000)
-      .def("depth_format_count", &Sensor::depthFormatCount)
-      .def("depth_format", &Sensor::depthFormat, "id"_a)
-      .def("color_format_count", &Sensor::colorFormatCount)
-      .def("color_format", &Sensor::colorFormat, "id"_a)
       // New API
       .def_prop_ro("image_size",
                    [](Sensor &sensor) {
@@ -88,37 +116,13 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
                      }
                      return formats;
                    })
-      .def_prop_ro("color_formats",
-                   [](Sensor &sensor) {
-                     std::vector<Sensor::Format> formats;
-                     for (int i = 0; i < sensor.colorFormatCount(); ++i) {
-                       formats.emplace_back(sensor.colorFormat(i));
-                     }
-                     return formats;
-                   })
-      .def_prop_ro("device_name",
-                   [](Sensor &sensor) {
-                     char buffer[256];
-                     auto result = sensor.deviceName(buffer, 256);
-                     if (result == -2)
-                       return string("buffer_too_small");
-                     if (result == -1)
-                       return string("sensor_manager_non_existing");
-                     return string(buffer, result);
-                   })
-      .def_prop_ro("uuid", [](Sensor &sensor) {
-        char buffer[256];
-        auto result = sensor.uuid(buffer, 256);
-        if (result == -2)
-          return string("buffer_too_small");
-        if (result == -1)
-          return string("sensor_manager_non_existing");
-        return string(buffer, result);
+      .def_prop_ro("color_formats", [](Sensor &sensor) {
+        std::vector<Sensor::Format> formats;
+        for (int i = 0; i < sensor.colorFormatCount(); ++i) {
+          formats.emplace_back(sensor.colorFormat(i));
+        }
+        return formats;
       });
-
-  nb::class_<SensorListener, PySensorListener>(m, "SensorListener")
-      .def(nb::init<>())
-      .def("on_sensor_data", &SensorListener::onSensorData);
 
   nb::class_<Sensor::Format>(m, "SensorFormat")
       // .def(nb::init<>())
@@ -130,6 +134,10 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
         return to_string(format.width) + "x" + to_string(format.height) + "@" +
                to_string(format.fps) + "fps";
       });
+
+  nb::class_<SensorListener, PySensorListener>(m, "SensorListener")
+      .def(nb::init<>())
+      .def("on_sensor_data", &SensorListener::onSensorData);
 
   nb::class_<SensorManager>(m, "SensorManager")
       .def(nb::init<>())
@@ -269,22 +277,25 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
   // Vec3i
   nb::class_<Vec3i>(m, "Vec3i")
       .def(nb::init<int, int, int>(), "x"_a, "y"_a, "z"_a)
-      .def_prop_ro("x", [](Vec3 &vec) { return vec[0]; })
-      .def_prop_ro("y", [](Vec3 &vec) { return vec[1]; })
-      .def_prop_ro("z", [](Vec3 &vec) { return vec[2]; });
+      .def_prop_ro("x", [](Vec3i &vec) { return vec[0]; })
+      .def_prop_ro("y", [](Vec3i &vec) { return vec[1]; })
+      .def_prop_ro("z", [](Vec3i &vec) { return vec[2]; });
   // Mat3
   nb::class_<Mat3>(m, "Mat3").def(nb::init<double *>());
   // Mat4
-  nb::class_<Mat4>(m, "Mat4").def(nb::init<double *>());
-  // Mesh
+  nb::class_<Mat4>(m, "Mat4")
+      .def(nb::init<double *>())
+      .def("inverse", &Mat4::inverse)
+      .def_static("from_euler", &Mat4::fromEuler, "rx"_a, "ry"_a, "rz"_a);
+  // RecFusion/Mesh.h
   nb::class_<Mesh>(m, "Mesh")
       .def(nb::init<>())
       // static Mesh* create()
       // TODO: this doesn't work :(
       // .def_static("create", "vertex_count"_a, "vertices"_a,
       // "triangle_count"_a,
-      //             "triangle_indices"_a, "colors"_a = 0, "normals"_a = 0,
-      //             "volume_resolution"_a = 512, &Mesh::create)
+      //             "triangle_indices"_a, "colors"_a = nb::none(), "normals"_a
+      //             = nb::none(), "volume_resolution"_a = 512, &Mesh::create)
       .def_prop_ro("vertex_count", &Mesh::vertexCount)
       .def_prop_ro("triangle_count", &Mesh::triangleCount)
       .def(
@@ -330,6 +341,22 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
         auto center = mesh.center();
         return make_tuple(center[0], center[1], center[2]);
       });
+  //   .def_prop_ro("vertices", [](Mesh &mesh) {
+  //     double *data = new double[mesh.vertexCount() * 3];
+  //     for (int i = 0, j = 0; i < mesh.vertexCount(); ++i, j += 3) {
+  //       auto v = mesh.vertex(i);
+  //       data[j] = v.x;
+  //       data[j+1] = v.y;
+  //       data[j+2] = v.z;
+  //     }
+  //    // nb::capsule owner(data, [](void *p) noexcept {
+  //    //       delete[] (double *) p;
+  //    //    });
+  //   return nb::ndarray<nb::numpy, double, nb::ndim<2>>(
+  //           /* data = */ data,
+  //           /* shape = */ { (size_t)mesh.vertexCount(), 3 }
+  //       );
+  // });
   // .def(
   //     "triangle",
   //     [](Mesh &mesh, int idx) {
@@ -374,7 +401,7 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
       .def_prop_ro("depth_to_color_transformation",
                    &RFSPlayback::depthToColorT);
 
-  // Calibration
+  // Calibration.h
   nb::class_<Calibration>(m, "Calibration")
       .def(nb::init<>())
       .def("init", &Calibration::init, "num_sensors"_a)
@@ -386,10 +413,14 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
       .def("calibrate", &Calibration::calibrate)
       .def(
           "get_transformation",
-          [](Calibration &calibration, int sensor) {
-            Mat4 *T = new Mat4();
-            calibration.getTransformation(sensor, *T);
-            return T;
+          [](Calibration &calibration, int sensor) -> std::optional<Mat4 *> {
+            auto T = new Mat4();
+            if (calibration.getTransformation(sensor, *T)) {
+              return T;
+            } else {
+              // TODO: make sure we are returing here None!
+              return {};
+            }
           },
           "sensor"_a)
       .def_static("get_marker_pose", &Calibration::getMarkerPose, "marker_id"_a,

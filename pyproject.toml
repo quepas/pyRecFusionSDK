@@ -3,14 +3,16 @@ name = "pyRecFusionSDK"
 version = "0.1.1"
 description = "Python wrapper around the RecFusionSDK library"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 authors = [
     { name = "Patryk Kiepas", email = "kiepas.patryk@gmail.com" },
 ]
 classifiers = [
     "License :: OSI Approved :: MIT License",
 ]
-dependencies = []
+dependencies = [
+"numpy >=2.3.2"
+]
 
 [project.optional-dependencies]
 dev = ["pytest >=8.4.1"]
