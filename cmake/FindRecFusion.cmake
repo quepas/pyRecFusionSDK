@@ -1,15 +1,13 @@
 include(CheckCXXSourceCompiles)
 
 function(find_recfusionsdk)
-    # Standard RecFusionSDK installation path
-    set(RF_WIN32_DIR "C:\\Program Files (x86)\\ImFusion\\RecFusionSDK")
     # Development RecFusionSDK path
     set(RF_DEV_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third-party/RecFusionSDK/")
 
     find_path(
         RECFUSION_INCLUDE_DIR
         NAMES RecFusion.h
-        HINTS ${RF_WIN32_DIR}/include ${RF_DEV_DIR}/include
+        HINTS $ENV{RECFUSION_SDK}/include ${RF_DEV_DIR}/include
     )
 
     if(NOT RECFUSION_INCLUDE_DIR)
@@ -19,7 +17,7 @@ function(find_recfusionsdk)
     find_library(
         RECFUSION_LIBRARY
         NAMES RecFusionSDK
-        HINTS ${RF_WIN32_DIR}/lib ${RF_DEV_DIR}/lib
+        HINTS $ENV{RECFUSION_SDK}/lib ${RF_DEV_DIR}/lib
     )
 
     if(NOT RECFUSION_LIBRARY)
