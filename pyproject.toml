@@ -1,6 +1,6 @@
 [project]
 name = "pyRecFusionSDK"
-version = "0.1.1"
+version = "0.1.0-rc1"
 description = "Python wrapper around the RecFusionSDK library"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -33,9 +33,3 @@ build-dir = "build/{wheel_tag}"
 
 # Build stable ABI wheels for CPython 3.12+
 wheel.py-api = "cp312"
-
-[[tool.uv.index]]
-name = "testpypi"
-url = "https://test.pypi.org/simple/"
-publish-url = "https://test.pypi.org/legacy/"
-explicit = true

@@ -20,11 +20,22 @@ This project slightly modifies or adds new functionalites to the original RecFus
   - `ColorImage.to_image(filename: str, compression: int = 3) -> None`
   - `DepthImage.to_image(filename: str, compression: int = 3) -> None`
 
+## Usage
+
+Requirements:
+* Installed locally the [RecFusion SDK](https://www.recfusion.net/download-recfusion/)
+
+Then:
+
+```shell
+pip install pyRecFusionSDK
+```
+
 ## Examples
 
 We provide several examples of using RecFusionSDK with Python:
 
-- [capture_playback.py](./examples/capture_play.py) - capture sequence of images as playback file (\*.rfs)
+- [capture_playback.py](./examples/capture_playback.py) - capture sequence of images as playback file (\*.rfs)
 - [capture_png.py](./examples/capture_png.py) - capture single frame to image (\*.png)
 - [machine_token.py](./examples/machine_token.py) - display machine token required for offline license
 - [reconstruct_from_playback.py](./examples/reconstruct_from_playback.py) - reconstruct mesh from playback file (\*.rfs)
