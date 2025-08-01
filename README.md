@@ -1,4 +1,4 @@
-# pyrecfusion
+# pyRecFusionSDK
 
 Easy multi-sensor mesh reconstruction with Python bindings to RecFusion SDK (C++).
 
@@ -24,10 +24,10 @@ This project slightly modifies or adds new functionalites to the original RecFus
 
 We provide several examples of using RecFusionSDK with Python:
 
-- [capture_playback.py](./example/capture_play.py) - capture sequence of images as playback file (\*.rfs)
-- [capture_png.py](./example/capture_png.py) - capture single frame to image (\*.png)
-- [machine_token.py](./example/machine_token.py) - display machine token required for offline license
-- [reconstruct_from_playback.py](./example/reconstruct_from_playback.py) - reconstruct mesh from playback file (\*.rfs)
-- [reconstruct_sensor.py](./example/reconstruct_sensor.py) - reconstruct mesh directly from sensor data
-- [reconstruct_sensor_listener.py](./example/reconstruct_sensor_listener.py) - reconstruct mesh directly from sensor data using sensor listener
-- [show_sensor_info.py](./example/show_sensor_info.py) - show information about sensor (e.g. model, UUID, resolutions)
+- [capture_playback.py](./examples/capture_play.py) - capture sequence of images as playback file (\*.rfs)
+- [capture_png.py](./examples/capture_png.py) - capture single frame to image (\*.png)
+- [machine_token.py](./examples/machine_token.py) - display machine token required for offline license
+- [reconstruct_from_playback.py](./examples/reconstruct_from_playback.py) - reconstruct mesh from playback file (\*.rfs)
+- [reconstruct_sensor.py](./examples/reconstruct_sensor.py) - reconstruct mesh directly from sensor data
+- [reconstruct_sensor_listener.py](./examples/reconstruct_sensor_listener.py) - (NOT WORKING) reconstruct mesh directly from sensor data using sensor listener
+- [show_sensor_info.py](./examples/show_sensor_info.py) - show information about sensor (e.g. model, UUID, resolutions)
