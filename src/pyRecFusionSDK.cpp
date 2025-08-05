@@ -144,6 +144,14 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
       .def_prop_ro("device_count", &SensorManager::deviceCount)
       .def("sensor", &SensorManager::sensor, "id"_a, nb::rv_policy::reference)
       // New API
+      .def_prop_ro("all",
+                   [](SensorManager &manager) {
+                     std::vector<Sensor *> sensors;
+                     for (int i = 0; i < manager.deviceCount(); ++i) {
+                       sensors.emplace_back(manager.sensor(i));
+                     }
+                     return sensors;
+                   })
       .def(
           "open_all",
           [](SensorManager &manager, int colorWidth, int colorHeight,
@@ -223,9 +231,19 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
       .def_prop_ro("channels", &ColorImage::channels)
       // New API
       .def_static(
-          "empty",
-          [](int width, int height, int channels) {
+          "allocate",
+          [](int width, int height, int channels = 3) {
             return new ColorImage(width, height, channels);
+          },
+          "width"_a, "height"_a, "channels"_a = 3)
+      .def_static(
+          "zeros",
+          [](int width, int height, int channels) {
+            auto image = new ColorImage(width, height, channels);
+            for (int i = 0; i < width * height; ++i) {
+              image->data()[i] = 0;
+            }
+            return image;
           },
           "width"_a, "height"_a, "channels"_a = 3)
       .def_static(
@@ -243,7 +261,28 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
             PngIO::writeImage(filename, img_color.data(), img_color.width(),
                               img_color.height(), num_channels, 0, compression);
           },
-          "filename"_a, "compression"_a = 3);
+          "filename"_a, "compression"_a = 3)
+      .def_prop_ro("data_ref",
+                   [](ColorImage &img) {
+                     // WARN: for some reason, channels() returns 0
+                     size_t num_channels =
+                         img.channels() > 0 ? img.channels() : 3;
+                     return nb::ndarray<nb::numpy, unsigned char, nb::ndim<3>>(
+                         /* data = */ img.data(),
+                         /* shape = */ {(size_t)img.width(),
+                                        (size_t)img.height(), num_channels});
+                   })
+      .def_prop_ro(
+          "data",
+          [](ColorImage &img) {
+            // WARN: for some reason, channels() returns 0
+            size_t num_channels = img.channels() > 0 ? img.channels() : 3;
+            return nb::ndarray<nb::numpy, unsigned char, nb::ndim<3>>(
+                /* data = */ img.data(),
+                /* shape = */ {(size_t)img.width(), (size_t)img.height(),
+                               num_channels});
+          },
+          nb::rv_policy::copy);
 
   nb::class_<DepthImage>(m, "DepthImage")
       .def(nb::init<int, int, float *>(), "width"_a, "height"_a, "data"_a = 0)
@@ -266,7 +305,19 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
             PngIO::writeImage(filename, img_depth.data(), img_depth.width(),
                               img_depth.height(), 1, compression);
           },
-          "filename"_a, "compression"_a = 3);
+          "filename"_a, "compression"_a = 3)
+      .def_prop_ro("data_ref",
+                   [](DepthImage &img) {
+                     return nb::ndarray<nb::numpy, float, nb::ndim<2>>(
+                         img.data(), {(size_t)img.width(), (size_t)img.height()});
+                   })
+      .def_prop_ro(
+          "data",
+          [](DepthImage &img) {
+            return nb::ndarray<nb::numpy, float, nb::ndim<2>>(
+                img.data(), {(size_t)img.width(), (size_t)img.height()});
+          },
+          nb::rv_policy::copy);
 
   // Vec3
   nb::class_<Vec3>(m, "Vec3")
@@ -294,8 +345,9 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
       // TODO: this doesn't work :(
       // .def_static("create", "vertex_count"_a, "vertices"_a,
       // "triangle_count"_a,
-      //             "triangle_indices"_a, "colors"_a = nb::none(), "normals"_a
-      //             = nb::none(), "volume_resolution"_a = 512, &Mesh::create)
+      //             "triangle_indices"_a, "colors"_a = nb::none(),
+      //             "normals"_a = nb::none(), "volume_resolution"_a = 512,
+      //             &Mesh::create)
       .def_prop_ro("vertex_count", &Mesh::vertexCount)
       .def_prop_ro("triangle_count", &Mesh::triangleCount)
       .def(
