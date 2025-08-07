@@ -35,3 +35,14 @@ if not found_dll:
 
 # Export all symbols
 from ._pyRecFusionSDK_impl import *
+
+class Mat3P(Mat3):
+
+    def __init__(self, data):
+        super().__init__(data)
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+    def __setitem__(self, key, value):
+        self.data[key] = value

@@ -309,7 +309,8 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
       .def_prop_ro("data_ref",
                    [](DepthImage &img) {
                      return nb::ndarray<nb::numpy, float, nb::ndim<2>>(
-                         img.data(), {(size_t)img.width(), (size_t)img.height()});
+                         img.data(),
+                         {(size_t)img.width(), (size_t)img.height()});
                    })
       .def_prop_ro(
           "data",
@@ -332,10 +333,44 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
       .def_prop_ro("y", [](Vec3i &vec) { return vec[1]; })
       .def_prop_ro("z", [](Vec3i &vec) { return vec[2]; });
   // Mat3
-  nb::class_<Mat3>(m, "Mat3").def(nb::init<double *>());
+  nb::class_<Mat3>(m, "Mat3")
+      .def("__init__",
+           [](Mat3 *t, const nb::ndarray<double, nb::shape<3, 3>> &array) {
+             new (t) Mat3(array.data());
+           })
+      .def_prop_rw(
+          "data",
+          [](Mat3 &matrix) {
+            return nb::ndarray<nb::numpy, double, nb::shape<3, 3>>(
+                matrix.data());
+          },
+          [](Mat3 &matrix, const nb::ndarray<double, nb::shape<3, 3>> &array) {
+            for (int r = 0; r < 3; ++r) {
+              for (int c = 0; c < 3; ++c) {
+                matrix(r, c) = array(r, c);
+              }
+            }
+          })
+      .def("__mul__", [](Mat3 &self, Mat3 &other) { return self * other; });
   // Mat4
   nb::class_<Mat4>(m, "Mat4")
-      .def(nb::init<double *>())
+      .def("__init__",
+           [](Mat4 *t, const nb::ndarray<double, nb::shape<4, 4>> &array) {
+             new (t) Mat4(array.data());
+           })
+      .def_prop_rw(
+          "data",
+          [](Mat4 &matrix) {
+            return nb::ndarray<nb::numpy, double, nb::shape<4, 4>>(
+                matrix.data());
+          },
+          [](Mat4 &matrix, const nb::ndarray<double, nb::shape<4, 4>> &array) {
+            for (int r = 0; r < 4; ++r) {
+              for (int c = 0; c < 4; ++c) {
+                matrix(r, c) = array(r, c);
+              }
+            }
+          })
       .def("inverse", &Mat4::inverse)
       .def_static("from_euler", &Mat4::fromEuler, "rx"_a, "ry"_a, "rz"_a);
   // RecFusion/Mesh.h
@@ -389,26 +424,26 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
             mesh.setNormal(idx, {r, g, b});
           },
           "idx"_a, "r"_a, "g"_a, "b"_a)
-      .def_prop_ro("center", [](Mesh &mesh) {
-        auto center = mesh.center();
-        return make_tuple(center[0], center[1], center[2]);
+      .def_prop_ro("center",
+                   [](Mesh &mesh) {
+                     auto center = mesh.center();
+                     return make_tuple(center[0], center[1], center[2]);
+                   })
+      .def_prop_ro("vertices", [](Mesh &mesh) {
+        double *data = new double[mesh.vertexCount() * 3];
+        for (int i = 0, j = 0; i < mesh.vertexCount(); ++i, j += 3) {
+          auto v = mesh.vertex(i);
+          data[j] = v.x;
+          data[j + 1] = v.y;
+          data[j + 2] = v.z;
+        }
+        // nb::capsule owner(data, [](void *p) noexcept {
+        //       delete[] (double *) p;
+        //    });
+        return nb::ndarray<nb::numpy, double, nb::ndim<2>>(
+            /* data = */ data,
+            /* shape = */ {(size_t)mesh.vertexCount(), 3});
       });
-  //   .def_prop_ro("vertices", [](Mesh &mesh) {
-  //     double *data = new double[mesh.vertexCount() * 3];
-  //     for (int i = 0, j = 0; i < mesh.vertexCount(); ++i, j += 3) {
-  //       auto v = mesh.vertex(i);
-  //       data[j] = v.x;
-  //       data[j+1] = v.y;
-  //       data[j+2] = v.z;
-  //     }
-  //    // nb::capsule owner(data, [](void *p) noexcept {
-  //    //       delete[] (double *) p;
-  //    //    });
-  //   return nb::ndarray<nb::numpy, double, nb::ndim<2>>(
-  //           /* data = */ data,
-  //           /* shape = */ { (size_t)mesh.vertexCount(), 3 }
-  //       );
-  // });
   // .def(
   //     "triangle",
   //     [](Mesh &mesh, int idx) {
