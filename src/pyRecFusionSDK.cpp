@@ -323,17 +323,29 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
   // Vec3
   nb::class_<Vec3>(m, "Vec3")
       .def(nb::init<double, double, double>(), "x"_a, "y"_a, "z"_a)
-      .def_prop_ro("x", [](Vec3 &vec) { return vec[0]; })
-      .def_prop_ro("y", [](Vec3 &vec) { return vec[1]; })
-      .def_prop_ro("z", [](Vec3 &vec) { return vec[2]; });
-  // Vec3i
-  nb::class_<Vec3i>(m, "Vec3i")
+      .def_prop_rw(
+          "x", [](Vec3 &vec) { return vec[0]; },
+          [](Vec3 &vec, double value) { vec[0] = value; })
+      .def_prop_rw(
+          "y", [](Vec3 &vec) { return vec[1]; },
+          [](Vec3 &vec, double value) { vec[1] = value; })
+      .def_prop_rw(
+          "z", [](Vec3 &vec) { return vec[2]; },
+          [](Vec3 &vec, double value) { vec[2] = value; })
+      // Vec3i
+      nb::class_<Vec3i>(m, "Vec3i")
       .def(nb::init<int, int, int>(), "x"_a, "y"_a, "z"_a)
-      .def_prop_ro("x", [](Vec3i &vec) { return vec[0]; })
-      .def_prop_ro("y", [](Vec3i &vec) { return vec[1]; })
-      .def_prop_ro("z", [](Vec3i &vec) { return vec[2]; });
-  // Mat3
-  nb::class_<Mat3>(m, "Mat3")
+      .def_prop_rw(
+          "x", [](Vec3i &vec) { return vec[0]; },
+          [](Vec3i &vec, int value) { vec[0] = value; })
+      .def_prop_rw(
+          "y", [](Vec3i &vec) { return vec[1]; },
+          [](Vec3i &vec, int value) { vec[1] = value; })
+      .def_prop_rw(
+          "z", [](Vec3i &vec) { return vec[2]; },
+          [](Vec3i &vec, int value) { vec[2] = value; })
+      // Mat3
+      nb::class_<Mat3>(m, "Mat3Base")
       .def("__init__",
            [](Mat3 *t, const nb::ndarray<double, nb::shape<3, 3>> &array) {
              new (t) Mat3(array.data());
@@ -351,9 +363,9 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
               }
             }
           })
-      .def("__mul__", [](Mat3 &self, Mat3 &other) { return self * other; });
+      .def("__matmul__", [](Mat3 &self, Mat3 &other) { return self * other; });
   // Mat4
-  nb::class_<Mat4>(m, "Mat4")
+  nb::class_<Mat4>(m, "Mat4Base")
       .def("__init__",
            [](Mat4 *t, const nb::ndarray<double, nb::shape<4, 4>> &array) {
              new (t) Mat4(array.data());
@@ -371,7 +383,8 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
               }
             }
           })
-      .def("inverse", &Mat4::inverse)
+      .def("__matmul__", [](Mat4 &self, Mat4 &other) { return self * other; });
+  .def("inverse", &Mat4::inverse)
       .def_static("from_euler", &Mat4::fromEuler, "rx"_a, "ry"_a, "rz"_a);
   // RecFusion/Mesh.h
   nb::class_<Mesh>(m, "Mesh")

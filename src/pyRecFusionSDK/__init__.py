@@ -1,6 +1,7 @@
 import os
 import sys
 from pathlib import Path
+from typing import Iterable
 
 # Usually, the package compilation on non-win32 system will fail, so
 # we shouldn't even be here... but just in case!
@@ -36,10 +37,21 @@ if not found_dll:
 # Export all symbols
 from ._pyRecFusionSDK_impl import *
 
-class Mat3P(Mat3):
 
-    def __init__(self, data):
-        super().__init__(data)
+class Mat3(Mat3Base):
+    def __init__(self, data: np.ndarray | Iterable):
+        super().__init__(np.asarray(data))
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+    def __setitem__(self, key, value):
+        self.data[key] = value
+
+
+class Mat4(Mat4Base):
+    def __init__(self, data: np.ndarray | Iterable):
+        super().__init__(np.asarray(data))
 
     def __getitem__(self, key):
         return self.data[key]
