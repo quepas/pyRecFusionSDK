@@ -124,16 +124,17 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
         return formats;
       });
 
-  nb::class_<Sensor::Format>(m, "SensorFormat")
+  nb::class_<Sensor::Format>(m, "_SensorFormat")
       // .def(nb::init<>())
       .def_ro("width", &Sensor::Format::width)
       .def_ro("height", &Sensor::Format::height)
-      .def_ro("fps", &Sensor::Format::fps)
-      // New API
-      .def("__repr__", [](Sensor::Format &format) {
-        return to_string(format.width) + "x" + to_string(format.height) + "@" +
-               to_string(format.fps) + "fps";
-      });
+      .def_ro("fps", &Sensor::Format::fps);
+  // New API
+  // .def("__repr__", [](Sensor::Format &format) {
+  //   return to_string(format.width) + "x" + to_string(format.height) + "@"
+  //   +
+  //          to_string(format.fps) + "fps";
+  // });
 
   nb::class_<SensorListener, PySensorListener>(m, "SensorListener")
       .def(nb::init<>())
@@ -226,6 +227,10 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
   nb::class_<ColorImage>(m, "ColorImage")
       .def(nb::init<int, int, int, unsigned char *>(), "width"_a, "height"_a,
            "channels"_a = 3, "data"_a = nb::none())
+      // .def("__init__",
+      //      [](ColorImage *img, const nb : ndarray<unsigned char> &array) {
+      //        new (t) ColorImage();
+      //      })
       .def_prop_ro("width", &ColorImage::width)
       .def_prop_ro("height", &ColorImage::height)
       .def_prop_ro("channels", &ColorImage::channels)
@@ -262,27 +267,25 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
                               img_color.height(), num_channels, 0, compression);
           },
           "filename"_a, "compression"_a = 3)
-      .def_prop_ro("data_ref",
-                   [](ColorImage &img) {
-                     // WARN: for some reason, channels() returns 0
-                     size_t num_channels =
-                         img.channels() > 0 ? img.channels() : 3;
-                     return nb::ndarray<nb::numpy, unsigned char, nb::ndim<3>>(
-                         /* data = */ img.data(),
-                         /* shape = */ {(size_t)img.width(),
-                                        (size_t)img.height(), num_channels});
-                   })
-      .def_prop_ro(
-          "data",
-          [](ColorImage &img) {
-            // WARN: for some reason, channels() returns 0
-            size_t num_channels = img.channels() > 0 ? img.channels() : 3;
-            return nb::ndarray<nb::numpy, unsigned char, nb::ndim<3>>(
-                /* data = */ img.data(),
-                /* shape = */ {(size_t)img.width(), (size_t)img.height(),
-                               num_channels});
-          },
-          nb::rv_policy::copy);
+      .def_prop_ro("data", [](ColorImage &img) {
+        // WARN: for some reason, channels() returns 0
+        size_t num_channels = img.channels() > 0 ? img.channels() : 3;
+        return nb::ndarray<nb::numpy, unsigned char, nb::ndim<3>>(
+            /* data = */ img.data(),
+            /* shape = */ {(size_t)img.width(), (size_t)img.height(),
+                           num_channels});
+      });
+  // .def_prop_ro(
+  //     "data",
+  //     [](ColorImage &img) {
+  //       // WARN: for some reason, channels() returns 0
+  //       size_t num_channels = img.channels() > 0 ? img.channels() : 3;
+  //       return nb::ndarray<nb::numpy, unsigned char, nb::ndim<3>>(
+  //           /* data = */ img.data(),
+  //           /* shape = */ {(size_t)img.width(), (size_t)img.height(),
+  //                          num_channels});
+  //     },
+  //     nb::rv_policy::copy);
 
   nb::class_<DepthImage>(m, "DepthImage")
       .def(nb::init<int, int, float *>(), "width"_a, "height"_a, "data"_a = 0)
@@ -321,7 +324,7 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
           nb::rv_policy::copy);
 
   // Vec3
-  nb::class_<Vec3>(m, "Vec3")
+  nb::class_<Vec3>(m, "_Vec3")
       .def(nb::init<double, double, double>(), "x"_a, "y"_a, "z"_a)
       .def_prop_rw(
           "x", [](Vec3 &vec) { return vec[0]; },
@@ -331,9 +334,9 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
           [](Vec3 &vec, double value) { vec[1] = value; })
       .def_prop_rw(
           "z", [](Vec3 &vec) { return vec[2]; },
-          [](Vec3 &vec, double value) { vec[2] = value; })
+          [](Vec3 &vec, double value) { vec[2] = value; });
       // Vec3i
-      nb::class_<Vec3i>(m, "Vec3i")
+      nb::class_<Vec3i>(m, "_Vec3i")
       .def(nb::init<int, int, int>(), "x"_a, "y"_a, "z"_a)
       .def_prop_rw(
           "x", [](Vec3i &vec) { return vec[0]; },
@@ -343,9 +346,9 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
           [](Vec3i &vec, int value) { vec[1] = value; })
       .def_prop_rw(
           "z", [](Vec3i &vec) { return vec[2]; },
-          [](Vec3i &vec, int value) { vec[2] = value; })
+          [](Vec3i &vec, int value) { vec[2] = value; });
       // Mat3
-      nb::class_<Mat3>(m, "Mat3Base")
+      nb::class_<Mat3>(m, "_Mat3")
       .def("__init__",
            [](Mat3 *t, const nb::ndarray<double, nb::shape<3, 3>> &array) {
              new (t) Mat3(array.data());
@@ -365,7 +368,7 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
           })
       .def("__matmul__", [](Mat3 &self, Mat3 &other) { return self * other; });
   // Mat4
-  nb::class_<Mat4>(m, "Mat4Base")
+  nb::class_<Mat4>(m, "_Mat4")
       .def("__init__",
            [](Mat4 *t, const nb::ndarray<double, nb::shape<4, 4>> &array) {
              new (t) Mat4(array.data());
@@ -383,8 +386,8 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
               }
             }
           })
-      .def("__matmul__", [](Mat4 &self, Mat4 &other) { return self * other; });
-  .def("inverse", &Mat4::inverse)
+      .def("__matmul__", [](Mat4 &self, Mat4 &other) { return self * other; })
+      .def("inverse", &Mat4::inverse)
       .def_static("from_euler", &Mat4::fromEuler, "rx"_a, "ry"_a, "rz"_a);
   // RecFusion/Mesh.h
   nb::class_<Mesh>(m, "Mesh")
@@ -518,7 +521,6 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
             if (calibration.getTransformation(sensor, *T)) {
               return T;
             } else {
-              // TODO: make sure we are returing here None!
               return {};
             }
           },
