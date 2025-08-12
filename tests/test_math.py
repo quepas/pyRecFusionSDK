@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_equal
 
-from pyRecFusionSDK import Mat3, Vec3, Vec3i
+from pyRecFusionSDK import Mat3, Mat4, Vec3, Vec3i
 
 
 class TestVectors:
@@ -56,9 +56,46 @@ class TestMat3:
         assert_equal((m1 @ m1).data, [[30, 36, 42], [66, 81, 96], [102, 126, 150]])
 
     def test_repr(self):
-        m1 = Mat3([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
-        assert repr(m1) == "Mat3([[1, 2, 3], [4, 5, 6], [7, 8, 9]])"
+        m1 = Mat3([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])
+        # INFO: Mat3 always stores values as float64
+        assert repr(m1) == "Mat3([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]])"
+
 
 class TestMat4:
+    def test_creation(self):
+        arr = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]]
+        m1 = Mat4(arr)
+        assert_equal(m1.data, arr)
+        assert m1.data.dtype == np.float64
+
+    def test_modification(self):
+        arr = [[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]]
+        m1 = Mat4(arr)
+        m1[0, 0] = 10
+        m1[1][1] = 60
+        m1.data[2, 2] = 110
+        m1.data[3][3] = 160
+        assert_equal(
+            m1.data, [[10, 2, 3, 4], [5, 60, 7, 8], [9, 10, 110, 12], [13, 14, 15, 160]]
+        )
+
     def test_matmul(self):
-        pass
+        arr = np.arange(16) + 1
+        arr.resize((4, 4))
+        m1 = Mat4(arr)
+        assert_equal(
+            (m1 @ m1).data,
+            [
+                [90, 100, 110, 120],
+                [202, 228, 254, 280],
+                [314, 356, 398, 440],
+                [426, 484, 542, 600],
+            ],
+        )
+
+    def test_repr(self):
+        m1 = Mat4([[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]])
+        assert repr(m1) == (
+            "Mat4([[1.0, 2.0, 3.0, 4.0], [5.0, 6.0, 7.0, 8.0], "
+            "[9.0, 10.0, 11.0, 12.0], [13.0, 14.0, 15.0, 16.0]])"
+        )
