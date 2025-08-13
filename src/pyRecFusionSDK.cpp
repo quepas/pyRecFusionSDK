@@ -7,13 +7,8 @@
 #include <nanobind/stl/tuple.h>
 #include <nanobind/stl/vector.h>
 #include <nanobind/trampoline.h>
-#include <optional>
 #include <string>
 #include <tuple>
-#include <vector>
-
-// TODO: delete this
-#include <iostream>
 
 using std::make_tuple, std::string, std::to_string;
 namespace nb = nanobind;
@@ -224,84 +219,88 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
 
   // RecFusion/Common.h
   // ColorImage
-  nb::class_<ColorImage>(m, "ColorImage")
-      .def(nb::init<int, int, int, unsigned char *>(), "width"_a, "height"_a,
-           "channels"_a = 3, "data"_a = nb::none())
-      // .def("__init__",
-      //      [](ColorImage *img, const nb : ndarray<unsigned char> &array) {
-      //        new (t) ColorImage();
-      //      })
+  nb::class_<ColorImage>(m, "_ColorImage")
+      .def("__init__",
+           [](ColorImage *img, const nb::ndarray<unsigned char> &array) {
+             if (array.size() == 0) {
+               throw std::invalid_argument("Array cannot be empty");
+             }
+             if (array.ndim() != 3) {
+               throw std::invalid_argument(
+                   "Array must have exactly 3 dimensions (height x width x "
+                   "channels)");
+             }
+             if (array.shape(2) != 3) {
+               throw std::invalid_argument(
+                   "The size of third dimension must be 3 (for RGB channels)");
+             }
+             // NOTE: in numpy, row/height is the first dimension (0)
+             new (img) ColorImage(array.shape(1), array.shape(0),
+                                  array.shape(2), array.data());
+           })
       .def_prop_ro("width", &ColorImage::width)
       .def_prop_ro("height", &ColorImage::height)
-      .def_prop_ro("channels", &ColorImage::channels)
-      // New API
-      .def_static(
-          "allocate",
-          [](int width, int height, int channels = 3) {
-            return new ColorImage(width, height, channels);
-          },
-          "width"_a, "height"_a, "channels"_a = 3)
-      .def_static(
-          "zeros",
-          [](int width, int height, int channels) {
-            auto image = new ColorImage(width, height, channels);
-            for (int i = 0; i < width * height; ++i) {
-              image->data()[i] = 0;
-            }
-            return image;
-          },
-          "width"_a, "height"_a, "channels"_a = 3)
-      .def_static(
-          "for_sensor",
-          [](const Sensor &sensor) {
-            return new ColorImage(sensor.colorWidth(), sensor.colorHeight());
-          },
-          "sensor"_a)
       .def(
           "to_image",
           [](ColorImage &img_color, const char *filename, int compression = 3) {
-            // BUG: for some reason, ColorImage::channels() returns 0
-            auto num_channels =
-                img_color.channels() > 0 ? img_color.channels() : 3;
             PngIO::writeImage(filename, img_color.data(), img_color.width(),
-                              img_color.height(), num_channels, 0, compression);
+                              img_color.height(), 3, 0, compression);
           },
           "filename"_a, "compression"_a = 3)
-      .def_prop_ro("data", [](ColorImage &img) {
-        // WARN: for some reason, channels() returns 0
-        size_t num_channels = img.channels() > 0 ? img.channels() : 3;
-        return nb::ndarray<nb::numpy, unsigned char, nb::ndim<3>>(
-            /* data = */ img.data(),
-            /* shape = */ {(size_t)img.width(), (size_t)img.height(),
-                           num_channels});
-      });
-  // .def_prop_ro(
-  //     "data",
-  //     [](ColorImage &img) {
-  //       // WARN: for some reason, channels() returns 0
-  //       size_t num_channels = img.channels() > 0 ? img.channels() : 3;
-  //       return nb::ndarray<nb::numpy, unsigned char, nb::ndim<3>>(
-  //           /* data = */ img.data(),
-  //           /* shape = */ {(size_t)img.width(), (size_t)img.height(),
-  //                          num_channels});
-  //     },
-  //     nb::rv_policy::copy);
+      .def_prop_rw(
+          "data",
+          [](ColorImage &img) {
+            return nb::ndarray<nb::numpy, unsigned char, nb::ndim<3>>(
+                img.data(), {(size_t)img.height(), (size_t)img.width(), 3});
+          },
+          [](ColorImage &img, const nb::ndarray<unsigned char> &array) {
+            if (array.size() == 0) {
+              throw std::invalid_argument("Array cannot be empty");
+            }
+            if (array.ndim() != 3) {
+              throw std::invalid_argument(
+                  "Array must have exactly 3 dimensions (height x width x "
+                  "channels)");
+            }
+            if (array.shape(0) != img.height()) {
+              throw std::invalid_argument(
+                  "The size of the first dimension (height)"
+                  "must be the same as previously allocated");
+            }
+            if (array.shape(1) != img.width()) {
+              throw std::invalid_argument(
+                  "The size of the second dimension (width)"
+                  "must be the same as previously allocated");
+            }
+            if (array.shape(2) != 3) {
+              throw std::invalid_argument(
+                  "The size of the third dimension "
+                  "must always be 3 (for RGB channels)");
+            }
+            int idx = 0;
+            for (int row = 0; row < img.height(); ++row) {
+              for (int col = 0; col < img.width(); ++col) {
+                img.data()[idx++] = array(row, col, 0);
+                img.data()[idx++] = array(row, col, 1);
+                img.data()[idx++] = array(row, col, 2);
+              }
+            }
+          });
 
-  nb::class_<DepthImage>(m, "DepthImage")
-      .def(nb::init<int, int, float *>(), "width"_a, "height"_a, "data"_a = 0)
+  nb::class_<DepthImage>(m, "_DepthImage")
+      .def("__init__",
+           [](DepthImage *img, const nb::ndarray<float> &array) {
+             if (array.size() == 0) {
+               throw std::invalid_argument("Array cannot be empty");
+             }
+             if (array.ndim() != 2) {
+               throw std::invalid_argument(
+                   "Array must have exactly 2 dimensions (height x width)");
+             }
+             new (img) DepthImage(array.shape(1), array.shape(0), array.data());
+           })
       .def_prop_ro("width", &DepthImage::width)
       .def_prop_ro("height", &DepthImage::height)
-      // New API
-      .def_static(
-          "empty",
-          [](int width, int height) { return new DepthImage(width, height); },
-          "width"_a, "height"_a)
-      .def_static(
-          "for_sensor",
-          [](const Sensor &sensor) {
-            return new DepthImage(sensor.depthWidth(), sensor.depthHeight());
-          },
-          "sensor"_a)
       .def(
           "to_image",
           [](DepthImage &img_depth, const char *filename, int compression = 3) {
@@ -309,19 +308,44 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
                               img_depth.height(), 1, compression);
           },
           "filename"_a, "compression"_a = 3)
-      .def_prop_ro("data_ref",
-                   [](DepthImage &img) {
-                     return nb::ndarray<nb::numpy, float, nb::ndim<2>>(
-                         img.data(),
-                         {(size_t)img.width(), (size_t)img.height()});
-                   })
-      .def_prop_ro(
+      .def_prop_rw(
           "data",
           [](DepthImage &img) {
             return nb::ndarray<nb::numpy, float, nb::ndim<2>>(
-                img.data(), {(size_t)img.width(), (size_t)img.height()});
+                img.data(), {(size_t)img.height(), (size_t)img.width()});
           },
-          nb::rv_policy::copy);
+          [](DepthImage &img, const nb::ndarray<float, nb::ndim<2>> &array) {
+            if (array.size() == 0) {
+              throw std::invalid_argument("Array cannot be empty");
+            }
+            if (array.ndim() != 2) {
+              throw std::invalid_argument(
+                  "Array must have exactly 2 dimensions (height x width)");
+            }
+            if (array.shape(0) != img.height()) {
+              throw std::invalid_argument(
+                  "The size of the first dimension (height)"
+                  "must be the same as previously allocated");
+            }
+            if (array.shape(1) != img.width()) {
+              throw std::invalid_argument(
+                  "The size of the second dimension (width)"
+                  "must be the same as previously allocated");
+            }
+            int idx = 0;
+            for (int row = 0; row < img.height(); ++row) {
+              for (int col = 0; col < img.width(); ++col) {
+                img.data()[idx++] = array(row, col);
+              }
+            }
+          })
+      .def_static("special", []() {
+        float *arr = new float[16];
+        for (int x = 0; x < 16; ++x) {
+          arr[x] = x + 1;
+        }
+        return new DepthImage(2, 8, arr);
+      });
 
   // Vec3
   nb::class_<Vec3>(m, "_Vec3")
@@ -335,8 +359,8 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
       .def_prop_rw(
           "z", [](Vec3 &vec) { return vec[2]; },
           [](Vec3 &vec, double value) { vec[2] = value; });
-      // Vec3i
-      nb::class_<Vec3i>(m, "_Vec3i")
+  // Vec3i
+  nb::class_<Vec3i>(m, "_Vec3i")
       .def(nb::init<int, int, int>(), "x"_a, "y"_a, "z"_a)
       .def_prop_rw(
           "x", [](Vec3i &vec) { return vec[0]; },
@@ -347,8 +371,8 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
       .def_prop_rw(
           "z", [](Vec3i &vec) { return vec[2]; },
           [](Vec3i &vec, int value) { vec[2] = value; });
-      // Mat3
-      nb::class_<Mat3>(m, "_Mat3")
+  // Mat3
+  nb::class_<Mat3>(m, "_Mat3")
       .def("__init__",
            [](Mat3 *t, const nb::ndarray<double, nb::shape<3, 3>> &array) {
              new (t) Mat3(array.data());

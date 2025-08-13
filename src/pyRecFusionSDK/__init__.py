@@ -37,8 +37,18 @@ if not found_dll:
     )
 
 # Export all symbols
-# from ._pyRecFusionSDK_impl import *
-from ._pyRecFusionSDK_impl import _Mat3, _Mat4, _SensorFormat, _Vec3, _Vec3i
+from ._pyRecFusionSDK_impl import *
+
+# And hidden ones!
+from ._pyRecFusionSDK_impl import (
+    _ColorImage,
+    _DepthImage,
+    _Mat3,
+    _Mat4,
+    _SensorFormat,
+    _Vec3,
+    _Vec3i,
+)
 
 
 class SensorFormat(_SensorFormat):
@@ -73,6 +83,9 @@ class Mat4(_Mat4):
     def __setitem__(self, key, value):
         self.data[key] = value
 
+    def __repr__(self):
+        return f"Mat4({self.data.tolist()})"
+
 
 class Vec3(_Vec3):
     def __repr__(self):
@@ -84,4 +97,44 @@ class Vec3i(_Vec3i):
         return f"Vec3i(x={self.x}, y={self.y}, z={self.z})"
 
 
-__all__ = ["Vec3", "Vec3i", "Mat3", "Mat4"]
+class ColorImage(_ColorImage):
+    def __init__(self, array):
+        super().__init__(array)
+
+    @classmethod
+    def allocate(cls, width, height):
+        array = np.zeros((width, height, 3), dtype=np.ubyte)
+        return cls(array)
+
+    @classmethod
+    def allocate_for_sensor(cls, sensor):
+        array = np.zeros((sensor.width, sensor.height, 3), dtype=np.ubyte)
+        return cls(array)
+
+    def __repr__(self):
+        return f"ColorImage(width={self.width}, height={self.height})"
+
+    @property
+    def channels(self):
+        self.data.shape[2]
+
+
+class DepthImage(_DepthImage):
+    def __init__(self, array):
+        super().__init__(array)
+
+    @classmethod
+    def allocate(cls, width, height):
+        array = np.zeros((width, height), dtype=np.single)
+        return cls(array)
+
+    @classmethod
+    def allocate_for_sensor(cls, sensor):
+        array = np.zeros((sensor.width, sensor.height), dtype=np.single)
+        return cls(array)
+
+    def __repr__(self):
+        return f"DepthImage(width={self.width}, height={self.height})"
+
+
+# __all__ = ["Vec3", "Vec3i", "Mat3", "Mat4"]
