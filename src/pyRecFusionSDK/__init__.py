@@ -103,12 +103,12 @@ class ColorImage(_ColorImage):
 
     @classmethod
     def allocate(cls, width, height):
-        array = np.zeros((width, height, 3), dtype=np.ubyte)
+        array = np.zeros((height, width, 3), dtype=np.ubyte)
         return cls(array)
 
     @classmethod
     def allocate_for_sensor(cls, sensor):
-        array = np.zeros((sensor.width, sensor.height, 3), dtype=np.ubyte)
+        array = np.zeros((sensor.height, sensor.width, 3), dtype=np.ubyte)
         return cls(array)
 
     def __repr__(self):
@@ -116,7 +116,7 @@ class ColorImage(_ColorImage):
 
     @property
     def channels(self):
-        self.data.shape[2]
+        return self.data.shape[2]
 
 
 class DepthImage(_DepthImage):
@@ -125,12 +125,12 @@ class DepthImage(_DepthImage):
 
     @classmethod
     def allocate(cls, width, height):
-        array = np.zeros((width, height), dtype=np.single)
+        array = np.zeros((height, width), dtype=np.single)
         return cls(array)
 
     @classmethod
     def allocate_for_sensor(cls, sensor):
-        array = np.zeros((sensor.width, sensor.height), dtype=np.single)
+        array = np.zeros((sensor.height, sensor.width), dtype=np.single)
         return cls(array)
 
     def __repr__(self):

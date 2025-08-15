@@ -221,19 +221,8 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
   // ColorImage
   nb::class_<ColorImage>(m, "_ColorImage")
       .def("__init__",
-           [](ColorImage *img, const nb::ndarray<unsigned char> &array) {
-             if (array.size() == 0) {
-               throw std::invalid_argument("Array cannot be empty");
-             }
-             if (array.ndim() != 3) {
-               throw std::invalid_argument(
-                   "Array must have exactly 3 dimensions (height x width x "
-                   "channels)");
-             }
-             if (array.shape(2) != 3) {
-               throw std::invalid_argument(
-                   "The size of third dimension must be 3 (for RGB channels)");
-             }
+           [](ColorImage *img,
+              const nb::ndarray<unsigned char, nb::shape<-1, -1, 3>> &array) {
              // NOTE: in numpy, row/height is the first dimension (0)
              new (img) ColorImage(array.shape(1), array.shape(0),
                                   array.shape(2), array.data());
@@ -253,29 +242,17 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
             return nb::ndarray<nb::numpy, unsigned char, nb::ndim<3>>(
                 img.data(), {(size_t)img.height(), (size_t)img.width(), 3});
           },
-          [](ColorImage &img, const nb::ndarray<unsigned char> &array) {
-            if (array.size() == 0) {
-              throw std::invalid_argument("Array cannot be empty");
-            }
-            if (array.ndim() != 3) {
-              throw std::invalid_argument(
-                  "Array must have exactly 3 dimensions (height x width x "
-                  "channels)");
-            }
+          [](ColorImage &img,
+             const nb::ndarray<unsigned char, nb::shape<-1, -1, 3>> &array) {
             if (array.shape(0) != img.height()) {
               throw std::invalid_argument(
-                  "The size of the first dimension (height)"
+                  "The size of the first dimension (height) "
                   "must be the same as previously allocated");
             }
             if (array.shape(1) != img.width()) {
               throw std::invalid_argument(
-                  "The size of the second dimension (width)"
+                  "The size of the second dimension (width) "
                   "must be the same as previously allocated");
-            }
-            if (array.shape(2) != 3) {
-              throw std::invalid_argument(
-                  "The size of the third dimension "
-                  "must always be 3 (for RGB channels)");
             }
             int idx = 0;
             for (int row = 0; row < img.height(); ++row) {
@@ -289,14 +266,7 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
 
   nb::class_<DepthImage>(m, "_DepthImage")
       .def("__init__",
-           [](DepthImage *img, const nb::ndarray<float> &array) {
-             if (array.size() == 0) {
-               throw std::invalid_argument("Array cannot be empty");
-             }
-             if (array.ndim() != 2) {
-               throw std::invalid_argument(
-                   "Array must have exactly 2 dimensions (height x width)");
-             }
+           [](DepthImage *img, const nb::ndarray<float, nb::ndim<2>> &array) {
              new (img) DepthImage(array.shape(1), array.shape(0), array.data());
            })
       .def_prop_ro("width", &DepthImage::width)
@@ -315,13 +285,6 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
                 img.data(), {(size_t)img.height(), (size_t)img.width()});
           },
           [](DepthImage &img, const nb::ndarray<float, nb::ndim<2>> &array) {
-            if (array.size() == 0) {
-              throw std::invalid_argument("Array cannot be empty");
-            }
-            if (array.ndim() != 2) {
-              throw std::invalid_argument(
-                  "Array must have exactly 2 dimensions (height x width)");
-            }
             if (array.shape(0) != img.height()) {
               throw std::invalid_argument(
                   "The size of the first dimension (height)"
@@ -338,14 +301,7 @@ NB_MODULE(_pyRecFusionSDK_impl, m) {
                 img.data()[idx++] = array(row, col);
               }
             }
-          })
-      .def_static("special", []() {
-        float *arr = new float[16];
-        for (int x = 0; x < 16; ++x) {
-          arr[x] = x + 1;
-        }
-        return new DepthImage(2, 8, arr);
-      });
+          });
 
   // Vec3
   nb::class_<Vec3>(m, "_Vec3")
