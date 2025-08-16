@@ -14,8 +14,8 @@ This project slightly modifies or adds new functionalites to the original RecFus
   - `Sensor.depth_formats: list[SensorFormat]`
 - Initialize playback recorder using sensor options: `RFSRecorder.init_from_sensor(sensor: Sensor) -> None`
 - Initialize empty `ColorImage` and `DepthImage` for a given `Sensor` (using its resolution etc.):
-  - `ColorIamge.for_sensor(sensor: Sensor) -> ColorImage`
-  - `DepthIamge.for_sensor(sensor: Sensor) -> DepthImage`
+  - `ColorIamge.allocate_for_sensor(sensor: Sensor) -> ColorImage`
+  - `DepthIamge.allocate_for_sensor(sensor: Sensor) -> DepthImage`
 - Save images to \*.png files:
   - `ColorImage.to_image(filename: str, compression: int = 3) -> None`
   - `DepthImage.to_image(filename: str, compression: int = 3) -> None`

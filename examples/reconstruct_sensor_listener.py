@@ -64,8 +64,8 @@ params.set_color_intrinsics(sensor.color_intrinsics)
 params.set_depth_to_color_transformation(sensor.depth_to_color_transformation)
 
 reconstruction = rf.Reconstruction(params)
-img_color = rf.ColorImage.for_sensor(sensor)
-img_depth = rf.DepthImage.for_sensor(sensor)
+img_color = rf.ColorImage.allocate_for_sensor(sensor)
+img_depth = rf.DepthImage.allocate_for_sensor(sensor)
 
 # int frame = 0
 max_frames = 100

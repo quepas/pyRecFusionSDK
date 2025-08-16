@@ -18,8 +18,8 @@ if not sensor:
     rf.deinit()
     sys.exit("ERROR: no sensor was opened!")
 
-img_color = rf.ColorImage.for_sensor(sensor)
-img_depth = rf.DepthImage.for_sensor(sensor)
+img_color = rf.ColorImage.allocate_for_sensor(sensor)
+img_depth = rf.DepthImage.allocate_for_sensor(sensor)
 
 if sensor.read_image(img_depth, img_color):
     img_color.to_image("color.png")
