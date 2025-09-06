@@ -59,6 +59,18 @@ nanobind_add_module(
 
   # Source code goes here
   src/pyRecFusionSDK.cpp
+  src/init_calibration.cpp
+  src/init_image.cpp
+  src/init_matrix.cpp
+  src/init_mesh.cpp
+  src/init_meshviewer.cpp
+  src/init_recfusionsdk.cpp
+  src/init_reconstruction.cpp
+  src/init_rfsplayback.cpp
+  src/init_rfsrecorder.cpp
+  src/init_sensor.cpp
+  src/init_sensormanager.cpp
+  src/init_vector.cpp
 )
 
 target_link_libraries(_pyRecFusionSDK_impl PRIVATE RecFusion::RecFusion_CXX)
