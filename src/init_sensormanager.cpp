@@ -1,6 +1,8 @@
 #include <RecFusion.h>
 #include <nanobind/nanobind.h>
+#include <nanobind/stl/vector.h>
 
+using std::vector;
 namespace nb = nanobind;
 using namespace nb::literals;
 using namespace RecFusion;
@@ -13,7 +15,7 @@ void init_sensormanager(nb::module_ &m) {
       // New API
       .def_prop_ro("all",
                    [](SensorManager &manager) {
-                     std::vector<Sensor *> sensors;
+                     vector<Sensor *> sensors;
                      for (int i = 0; i < manager.deviceCount(); ++i) {
                        sensors.emplace_back(manager.sensor(i));
                      }
@@ -23,7 +25,7 @@ void init_sensormanager(nb::module_ &m) {
           "open_all",
           [](SensorManager &manager, int colorWidth, int colorHeight,
              int depthWidth, int depthHeight, double maxFps) {
-            std::vector<Sensor *> sensors;
+            vector<Sensor *> sensors;
             for (int i = 0; i < manager.deviceCount(); ++i) {
               auto sensor = manager.sensor(i);
               if (sensor->open(colorWidth, colorHeight, depthWidth, depthHeight,

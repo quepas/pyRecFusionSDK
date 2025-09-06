@@ -1,9 +1,23 @@
 #include <RecFusion.h>
 #include <nanobind/nanobind.h>
+#include <nanobind/stl/string.h>
+#include <nanobind/stl/tuple.h>
+#include <nanobind/stl/vector.h>
+#include <nanobind/trampoline.h>
 
+using std::string, std::make_tuple, std::vector;
 namespace nb = nanobind;
 using namespace nb::literals;
 using namespace RecFusion;
+
+struct PySensorListener : public SensorListener {
+  NB_TRAMPOLINE(SensorListener, 1);
+
+  void onSensorData(const ColorImage &colorImg,
+                    const DepthImage &depthImg) override {
+    NB_OVERRIDE_PURE(onSensorData, colorImg, depthImg);
+  }
+};
 
 void init_sensor(nb::module_ &m) {
   // RecFusion/Sensor.h
@@ -70,14 +84,14 @@ void init_sensor(nb::module_ &m) {
                    })
       .def_prop_ro("depth_formats",
                    [](Sensor &sensor) {
-                     std::vector<Sensor::Format> formats;
+                     vector<Sensor::Format> formats;
                      for (int i = 0; i < sensor.depthFormatCount(); ++i) {
                        formats.emplace_back(sensor.depthFormat(i));
                      }
                      return formats;
                    })
       .def_prop_ro("color_formats", [](Sensor &sensor) {
-        std::vector<Sensor::Format> formats;
+        vector<Sensor::Format> formats;
         for (int i = 0; i < sensor.colorFormatCount(); ++i) {
           formats.emplace_back(sensor.colorFormat(i));
         }

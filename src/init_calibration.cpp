@@ -1,5 +1,6 @@
 #include <RecFusion.h>
 #include <nanobind/nanobind.h>
+#include <nanobind/stl/optional.h>
 
 namespace nb = nanobind;
 using namespace nb::literals;

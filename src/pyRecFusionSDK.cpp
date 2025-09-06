@@ -1,28 +1,7 @@
-#include <PngIO.h>
 #include <RecFusion.h>
 #include <nanobind/nanobind.h>
-#include <nanobind/ndarray.h>
-#include <nanobind/stl/optional.h>
-#include <nanobind/stl/string.h>
-#include <nanobind/stl/tuple.h>
-#include <nanobind/stl/vector.h>
-#include <nanobind/trampoline.h>
-#include <string>
-#include <tuple>
 
-using std::make_tuple, std::string, std::to_string;
 namespace nb = nanobind;
-using namespace RecFusion;
-using namespace nb::literals;
-
-struct PySensorListener : public SensorListener {
-  NB_TRAMPOLINE(SensorListener, 1);
-
-  void onSensorData(const ColorImage &colorImg,
-                    const DepthImage &depthImg) override {
-    NB_OVERRIDE_PURE(onSensorData, colorImg, depthImg);
-  }
-};
 
 void init_calibration(nb::module_ &);
 void init_image(nb::module_ &);

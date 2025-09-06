@@ -1,6 +1,9 @@
 #include <RecFusion.h>
 #include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
+#include <nanobind/stl/tuple.h>
 
+using std::make_tuple;
 namespace nb = nanobind;
 using namespace nb::literals;
 using namespace RecFusion;
