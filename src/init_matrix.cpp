@@ -21,7 +21,7 @@ void init_matrix(nb::module_ &m) {
           [](Mat3 *t, const nb::ndarray<double, nb::shape<3, 3>> &array) {
             new (t) Mat3(array.data());
           },
-          "Construct matrix from 3x3 Numpy array")
+          "Construct matrix from 3x3 Numpy array.")
       .def_prop_rw(
           "data",
           [](Mat3 &matrix) {
@@ -35,10 +35,10 @@ void init_matrix(nb::module_ &m) {
               }
             }
           },
-          "Access matrix values as Numpy array")
+          "Access matrix values as Numpy array.")
       .def(
           "__matmul__", [](Mat3 &self, Mat3 &other) { return self * other; },
-          "Multiply 3x3 matrices");
+          "Multiply two 3x3 matrices.");
 
   nb::class_<Mat4>(
       m, "_Mat4",
@@ -48,7 +48,7 @@ void init_matrix(nb::module_ &m) {
           [](Mat4 *t, const nb::ndarray<double, nb::shape<4, 4>> &array) {
             new (t) Mat4(array.data());
           },
-          "Construct matrix from 4x4 Numpy array")
+          "Construct matrix from 4x4 Numpy array.")
       .def_prop_rw(
           "data",
           [](Mat4 &matrix) {
@@ -62,11 +62,11 @@ void init_matrix(nb::module_ &m) {
               }
             }
           },
-          "Access matrix values as Numpy array")
+          "Access matrix values as Numpy array.")
       .def(
           "__matmul__", [](Mat4 &self, Mat4 &other) { return self * other; },
-          "Multiply two 4x4 matrices")
-      .def("inverse", &Mat4::inverse, "Compute inverse matrix")
+          "Multiply two 4x4 matrices.")
+      .def("inverse", &Mat4::inverse, "Compute inverse matrix.")
       .def_static("from_euler", &Mat4::fromEuler, "rx"_a, "ry"_a, "rz"_a,
                   "Convert Euler angles in degrees to a homogeneous "
                   "transformation matrix.");
