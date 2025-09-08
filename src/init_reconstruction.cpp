@@ -6,7 +6,6 @@ using namespace nb::literals;
 using namespace RecFusion;
 
 void init_reconstruction(nb::module_ &m) {
-
   nb::class_<ReconstructionParams>(m, "ReconstructionParams")
       .def(nb::init<int>(), "sensors"_a = 1)
       .def_prop_ro("sensors", &ReconstructionParams::sensors)
@@ -21,8 +20,7 @@ void init_reconstruction(nb::module_ &m) {
       .def("set_depth_to_color_transformation",
            &ReconstructionParams::setDepthToColorTransformation, "T"_a,
            "sensor"_a = 0);
-  // .def("intrinsics
-  // Reconstruction
+
   nb::class_<Reconstruction>(m, "Reconstruction")
       .def(nb::init<ReconstructionParams>())
       .def_prop_ro("good", &Reconstruction::good)

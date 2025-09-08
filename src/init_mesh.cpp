@@ -9,7 +9,6 @@ using namespace nb::literals;
 using namespace RecFusion;
 
 void init_mesh(nb::module_ &m) {
-  // RecFusion/Mesh.h
   nb::class_<Mesh>(m, "Mesh")
       .def(nb::init<>())
       // static Mesh* create()
