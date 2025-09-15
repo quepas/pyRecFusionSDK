@@ -55,8 +55,10 @@ void init_calibration(nb::module_ &m) {
             }
           },
           "sensor"_a,
-          "Get transformation from specified sensor to first sensor.")
+          "Get transformation from specified sensor to first sensor, if "
+          "calibration has succeded.")
+      // TODO: change get_marker_pose to return the transformation by value?
       .def_static("get_marker_pose", &Calibration::getMarkerPose, "marker_id"_a,
                   "marker_size"_a, "img_color"_a, "color_k"_a, "t"_a,
-                  "Get transformation from specified marker to sensor.");
+                  "Get transformation from specified marker to sensor, if transformation is available.");
 }
