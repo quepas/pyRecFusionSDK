@@ -24,17 +24,17 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-print(f"Using RecFusionSDK v{rf.version()}")
+print(f"Using RecFusionSDK v{rf.sdk.version()}")
 
-if not rf.activate(args.license_key):
+if not rf.sdk.activate(args.license_key):
     print("ERROR: Invalid RecFusion license. Export will be disabled")
 
-rf.init()
+rf.sdk.init()
 sensor_manager = rf.SensorManager()
 sensor = sensor_manager.open_any()
 
 if not sensor:
-    rf.deinit()
+    rf.sdk.deinit()
     sys.exit("ERROR: no sensor was opened!")
 
 cw, ch, dw, dh = sensor.image_size
@@ -75,4 +75,4 @@ print("Mesh #vertices: ", mesh.vertex_count)
 print("Mesh #triangles: ", mesh.triangle_count)
 
 print(mesh.vertices)
-rf.deinit()
+rf.sdk.deinit()

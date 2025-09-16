@@ -6,5 +6,5 @@ Example: display the token of the current machine used for:
 
 import pyRecFusionSDK as rf
 
-print(f"Using RecFusionSDK v{rf.version()}")
-print(f"This machine token: {rf.token()}")
+print(f"Using RecFusionSDK v{rf.sdk.version()}")
+print(f"This machine token: {rf.sdk.token()}")

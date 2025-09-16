@@ -24,20 +24,24 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-print(f"Using RecFusionSDK v{rf.version()}")
+print(f"Using RecFusionSDK v{rf.sdk.version()}")
 
 class HandleFrames(rf.SensorListener):
 
     def __init__(self) -> None:
-        pass
+        super().__init__()
 
-    def on_sensor_data(self, color_img, depth_img):
+    def onSensorData(self, color_img, depth_img):
         print("On data!")
+        # super().onSensorData(color_img, depth_img)
+        print("On data!")
+
+
 
 # if not rf.activate(args.license_key):
 #     print("ERROR: Invalid RecFusion license. Export will be disabled")
 
-rf.init()
+rf.sdk.init()
 sensor_manager = rf.SensorManager()
 sensor = sensor_manager.open_any()
 
@@ -45,8 +49,11 @@ listener = HandleFrames()
 sensor.add_listener(listener)
 sensor.start()
 print("Doing stuff!")
+import time
+time.sleep(5)
 sensor.stop()
 sensor.remove_listener(listener)
+exit()
 
 if not sensor:
     rf.deinit()
@@ -81,7 +88,7 @@ sensor.close()
 print("Finished reconstruction")
 
 if not reconstruction.good:
-    rf.deinit()
+    rf.sdk.deinit()
     sys.exit("Failed to reconstruct a mesh")
 
 mesh = reconstruction.get_mesh()
@@ -89,4 +96,4 @@ print("Mesh center: ", mesh.center)
 print("Mesh #vertices: ", mesh.vertex_count)
 print("Mesh #triangles: ", mesh.triangle_count)
 
-rf.deinit()
+rf.sdk.deinit()

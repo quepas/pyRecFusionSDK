@@ -30,12 +30,12 @@ parser.add_argument(
 args = parser.parse_args()
 
 
-print(f"Using RecFusionSDK v{rf.version()}")
+print(f"Using RecFusionSDK v{rf.sdk.version()}")
 
-if not rf.activate(args.license_key):
+if not rf.sdk.activate(args.license_key):
     print("ERROR: Invalid RecFusion license. Export will be disabled")
 
-rf.init()
+rf.sdk.init()
 playback = RFSPlayback()
 playback.open(args.playback)
 num_frames = playback.frame_count
@@ -68,7 +68,7 @@ playback.close()
 print("Finished reconstruction")
 
 if not reconstruction.good:
-    rf.deinit()
+    rf.sdk.deinit()
     sys.exit("Failed to reconstruct a mesh")
 
 mesh = reconstruction.get_mesh()
@@ -76,4 +76,4 @@ print("Mesh center: ", mesh.center)
 print("Mesh #vertices: ", mesh.vertex_count)
 print("Mesh #triangles: ", mesh.triangle_count)
 
-rf.deinit()
+rf.sdk.deinit()

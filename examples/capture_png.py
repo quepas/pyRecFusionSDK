@@ -8,14 +8,14 @@ import sys
 
 import pyRecFusionSDK as rf
 
-print(f"Using RecFusionSDK v{rf.version()}")
-rf.init()
+print(f"Using RecFusionSDK v{rf.sdk.version()}")
+rf.sdk.init()
 
 sensor_manager = rf.SensorManager()
 sensor = sensor_manager.open_any()
 
 if not sensor:
-    rf.deinit()
+    rf.sdk.deinit()
     sys.exit("ERROR: no sensor was opened!")
 
 img_color = rf.ColorImage.allocate_for_sensor(sensor)
@@ -29,4 +29,4 @@ else:
     print("Failed to read color and depth images")
 
 sensor.close()
-rf.deinit()
+rf.sdk.deinit()

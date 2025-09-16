@@ -1,4 +1,5 @@
 import pyRecFusionSDK as rf
+import numpy as np
 
 # Initialize vectors
 v1 = rf.Vec3(1.1, 2.2, 3.3)

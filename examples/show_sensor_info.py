@@ -11,14 +11,14 @@ import pyRecFusionSDK as rf
 PREFERRED_WIDTH = 640
 PREFERRED_HEIGHT = 480
 
-print(f"Using RecFusionSDK v{rf.version()}")
-rf.init()
+print(f"Using RecFusionSDK v{rf.sdk.version()}")
+rf.sdk.init()
 
 sensor_manager = rf.SensorManager()
 sensors = sensor_manager.open_all()
 
 if not sensors:
-    rf.deinit()
+    rf.sdk.deinit()
     sys.exit("ERROR: Couldn't open any sensors!")
 
 
@@ -49,4 +49,4 @@ print("(*) - means preferred sensor format")
 # Close all sensors
 for sensor in sensors:
     sensor.close()
-rf.deinit()
+rf.sdk.deinit()
