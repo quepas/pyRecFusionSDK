@@ -1,6 +1,6 @@
 #include <RecFusion.h>
 #include <nanobind/nanobind.h>
-#include <nanobind/tuple.h>
+#include <nanobind/stl/tuple.h>
 
 namespace nb = nanobind;
 using namespace nb::literals;
@@ -26,9 +26,9 @@ void init_reconstruction(nb::module_ &m) {
       .def(
           "image_size",
           [](ReconstructionParams &params, int sensor = 0) {
-            int color_width, color_height, depth_width, depth_heigth;
-            params.imaggeSize(&color_width, &color_height, &depth_width,
-                              &depth_heigth, sensor);
+            int color_width, color_height, depth_width, depth_height;
+            params.imageSize(color_width, color_height, depth_width,
+                              depth_height, sensor);
             return make_tuple(color_width, color_height, depth_width,
                               depth_height);
           },
