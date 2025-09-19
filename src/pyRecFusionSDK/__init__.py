@@ -108,7 +108,7 @@ class ColorImage(_ColorImage):
 
     @classmethod
     def allocate_for_sensor(cls, sensor):
-        array = np.zeros((sensor.height, sensor.width, 3), dtype=np.ubyte)
+        array = np.zeros((sensor.color_height, sensor.color_width, 3), dtype=np.ubyte)
         return cls(array)
 
     def __repr__(self):
@@ -130,7 +130,7 @@ class DepthImage(_DepthImage):
 
     @classmethod
     def allocate_for_sensor(cls, sensor):
-        array = np.zeros((sensor.height, sensor.width), dtype=np.single)
+        array = np.zeros((sensor.depth_height, sensor.depth_width), dtype=np.single)
         return cls(array)
 
     def __repr__(self):
